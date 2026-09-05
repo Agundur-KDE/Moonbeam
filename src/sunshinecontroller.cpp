@@ -1,15 +1,37 @@
 #include "sunshinecontroller.h"
 
+#include <QDir>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLockFile>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QRegularExpression>
 #include <QSslConfiguration>
 #include <QSslError>
 #include <QSslSocket>
 #include <QStandardPaths>
 #include <QTcpSocket>
 #include <QUrl>
+
+namespace
+{
+// Sunshine's own server certificate CN, set in httpcommon.cpp
+// (crypto::gen_creds("Sunshine Gamestream Host", ...)). Used to confirm
+// that whatever is listening on the expected port is actually Sunshine,
+// not some other local process that happens to have grabbed the port.
+const QString SunshineCertCommonName = QStringLiteral("Sunshine Gamestream Host");
+
+// Sunshine derives its web UI port as (configured base `port`, default
+// 47989) + 1 (confighttp::PORT_HTTPS offset), see config.cpp. Reading the
+// actual config avoids treating a custom-port Sunshine as "not running"
+// and starting a conflicting second instance on the default port.
+quint16 defaultBasePort()
+{
+    return 47989;
+}
+}
 
 SunshineController::SunshineController(QObject *parent)
     : QObject(parent)
@@ -60,6 +82,25 @@ bool SunshineController::pairingInProgress() const
     return m_pairingInProgress;
 }
 
+quint16 SunshineController::resolveWebUiPort() const
+{
+    const QString configPath = QDir::homePath() + QStringLiteral("/.config/sunshine/sunshine.conf");
+    QFile file(configPath);
+    quint16 basePort = defaultBasePort();
+
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        static const QRegularExpression portLine(QStringLiteral("^\\s*port\\s*=\\s*(\\d+)\\s*$"));
+        while (!file.atEnd()) {
+            const auto match = portLine.match(QString::fromUtf8(file.readLine()));
+            if (match.hasMatch()) {
+                basePort = static_cast<quint16>(match.captured(1).toUInt());
+            }
+        }
+    }
+
+    return basePort + 1;
+}
+
 void SunshineController::refresh()
 {
     if (m_process.state() != QProcess::NotRunning) {
@@ -67,7 +108,8 @@ void SunshineController::refresh()
         return;
     }
 
-    if (isPortOpen(WebUiPort)) {
+    const quint16 webUiPort = resolveWebUiPort();
+    if (isPortOpen(webUiPort) && isSunshineAt(webUiPort)) {
         setState(State::RunningExternal);
         return;
     }
@@ -81,6 +123,16 @@ void SunshineController::refresh()
 
 void SunshineController::start()
 {
+    // Closes the TOCTOU window between the port check and QProcess::start():
+    // two Moonbeam processes racing here will have one win the lock and the
+    // other block briefly on tryLock(), then see RunningExternal on its own
+    // subsequent refresh() instead of also spawning a process.
+    QLockFile lockFile(QDir::temp().filePath(QStringLiteral("moonbeam-sunshine-start.lock")));
+    if (!lockFile.tryLock(2000)) {
+        refresh();
+        return;
+    }
+
     refresh();
 
     if (m_state != State::Stopped) {
@@ -89,6 +141,7 @@ void SunshineController::start()
     }
 
     m_process.start(m_executablePath, {});
+    m_process.waitForStarted(2000);
 }
 
 void SunshineController::stop()
@@ -109,18 +162,22 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
         return;
     }
 
-    QNetworkRequest request(QUrl(QStringLiteral("https://127.0.0.1:%1/api/pin").arg(WebUiPort)));
+    const quint16 webUiPort = resolveWebUiPort();
+
+    if (!isSunshineAt(webUiPort)) {
+        Q_EMIT pairingFailed(QStringLiteral("Could not verify a Sunshine instance on port %1 - refusing to send credentials").arg(webUiPort));
+        return;
+    }
+
+    QNetworkRequest request(QUrl(QStringLiteral("https://127.0.0.1:%1/api/pin").arg(webUiPort)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 
     const QByteArray credentials = (webUiUser + QStringLiteral(":") + webUiPassword).toUtf8().toBase64();
     request.setRawHeader("Authorization", "Basic " + credentials);
 
-    // Sunshine's cert is self-signed; we're talking to our own local
-    // instance over loopback (not a real network hop an attacker could
-    // sit on without already having a foothold on this machine), so
-    // there's no meaningful identity to verify. Deliberately not doing
-    // certificate pinning here - real mitigation for a threat model this
-    // app doesn't have.
+    // Sunshine's cert is self-signed; we already verified its CN above, so
+    // this isn't blind trust - just skipping the CA-chain check that a
+    // self-signed cert could never pass anyway.
     QSslConfiguration sslConfig = request.sslConfiguration();
     sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
     request.setSslConfiguration(sslConfig);
@@ -179,4 +236,18 @@ bool SunshineController::isPortOpen(quint16 port, int timeoutMs) const
     const bool connected = socket.waitForConnected(timeoutMs);
     socket.abort();
     return connected;
+}
+
+bool SunshineController::isSunshineAt(quint16 port, int timeoutMs) const
+{
+    QSslSocket socket;
+    socket.setPeerVerifyMode(QSslSocket::VerifyNone);
+    socket.connectToHostEncrypted(QStringLiteral("127.0.0.1"), port);
+    if (!socket.waitForEncrypted(timeoutMs)) {
+        return false;
+    }
+
+    const QSslCertificate cert = socket.peerCertificate();
+    socket.abort();
+    return cert.subjectInfo(QSslCertificate::CommonName).contains(SunshineCertCommonName);
 }

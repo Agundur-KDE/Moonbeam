@@ -5,10 +5,30 @@ your desktop over the network (Sunshine/Moonlight) and cast media, from one app.
 
 ## Status
 
-Early sketch, but it builds and runs (Kirigami window, page navigation).
-`SunshineController` is still a stub (naively spawns `sunshine` with no
-config/pairing logic), pairing is UI-only, and media casting is a
-placeholder page that will eventually reuse KCast's cast flow.
+Builds and runs. `SunshineController` is a QML singleton (see "Why a
+singleton" below) that:
+- detects whether Sunshine is installed, already running, or stopped, and
+  never starts a second instance against an already-open web UI port
+- verifies a candidate port actually belongs to Sunshine (its self-signed
+  cert's CN, "Sunshine Gamestream Host") before trusting it or sending it
+  credentials, rather than assuming any process on that port is Sunshine
+- reads the real web UI port from Sunshine's own config (`port` + 1) instead
+  of hardcoding 47990
+- pairs a Moonlight client via a real `POST /api/pin` call
+
+Media casting is still a placeholder page for KCast's existing flow.
+
+### Known limitations (not yet fixed)
+
+- `stop()` blocks the GUI thread for up to 3s waiting for Sunshine to exit
+  before falling back to `kill()`. Acceptable for an explicit user click on
+  a sketch-stage app; a polished version should do this asynchronously.
+- The TOCTOU window between the port check and spawning a process is
+  narrowed by a `QLockFile` (`start()`) but not eliminated for instances
+  started by something other than Moonbeam at the exact same moment.
+- `pair()`'s PIN validation lives only in the QML `IntValidator` plus
+  Sunshine's own server-side check - there's no redundant validation in
+  `SunshineController` itself.
 
 ## Roadmap ideas
 
@@ -35,6 +55,16 @@ placeholder page that will eventually reuse KCast's cast flow.
   `stream_output` (whole-display capture). Adding window/region picking
   would mean wiring one of those two requests into `kwingrab.cpp` plus a
   picker UI (e.g. a Spectacle-style rectangle selector) here in Moonbeam.
+
+## Why a singleton, not a per-page controller
+
+`SunshineController` used to be instantiated inside each QML page that
+needed it (`SunshineController { id: sunshine }` in both `StatusPage.qml`
+and `PairingPage.qml`). That was a real bug, not just a style issue: each
+instance owns a live `QProcess`, and navigating away from a page could
+destroy its `SunshineController` - silently killing a Sunshine process that
+instance had started, just from switching pages. It's now `QML_SINGLETON`,
+so there's exactly one controller for the app's lifetime.
 
 ## Why a separate app, not a Plasmoid
 

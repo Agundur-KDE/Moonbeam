@@ -5,21 +5,27 @@ import org.kde.kirigami as Kirigami
 import org.agundur.moonbeam
 
 Kirigami.ScrollablePage {
+    id: root
     title: qsTr("Pair a Device")
 
-    SunshineController {
-        id: sunshine
+    readonly property var sunshine: SunshineController
 
-        onPairingSucceeded: {
+    Connections {
+        target: root.sunshine
+
+        function onPairingSucceeded() {
             resultMessage.type = Kirigami.MessageType.Positive;
             resultMessage.text = qsTr("Paired! The device should now be able to stream.");
             resultMessage.visible = true;
             pinField.text = "";
+            webUiPasswordField.text = "";
         }
-        onPairingFailed: reason => {
+
+        function onPairingFailed(reason) {
             resultMessage.type = Kirigami.MessageType.Error;
             resultMessage.text = qsTr("Pairing failed: %1").arg(reason);
             resultMessage.visible = true;
+            webUiPasswordField.text = "";
         }
     }
 
@@ -38,7 +44,7 @@ Kirigami.ScrollablePage {
             id: webUiUserField
             Layout.fillWidth: true
             placeholderText: qsTr("Sunshine web UI username")
-            enabled: !sunshine.pairingInProgress
+            enabled: !root.sunshine.pairingInProgress
         }
 
         Controls.TextField {
@@ -46,7 +52,7 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             placeholderText: qsTr("Sunshine web UI password")
             echoMode: TextInput.Password
-            enabled: !sunshine.pairingInProgress
+            enabled: !root.sunshine.pairingInProgress
         }
 
         Kirigami.InlineMessage {
@@ -59,7 +65,7 @@ Kirigami.ScrollablePage {
             id: pinField
             Layout.fillWidth: true
             placeholderText: qsTr("PIN from Moonlight")
-            enabled: !sunshine.pairingInProgress
+            enabled: !root.sunshine.pairingInProgress
             validator: IntValidator { bottom: 0; top: 9999 }
         }
 
@@ -67,21 +73,21 @@ Kirigami.ScrollablePage {
             id: nameField
             Layout.fillWidth: true
             placeholderText: qsTr("Device name (optional)")
-            enabled: !sunshine.pairingInProgress
+            enabled: !root.sunshine.pairingInProgress
         }
 
         Controls.Button {
             Layout.alignment: Qt.AlignRight
-            text: sunshine.pairingInProgress ? qsTr("Pairing…") : qsTr("Pair")
+            text: root.sunshine.pairingInProgress ? qsTr("Pairing…") : qsTr("Pair")
             icon.name: "dialog-ok"
             enabled: pinField.text.length > 0 && webUiUserField.text.length > 0
-                && webUiPasswordField.text.length > 0 && !sunshine.pairingInProgress
+                && webUiPasswordField.text.length > 0 && !root.sunshine.pairingInProgress
             onClicked: {
                 resultMessage.visible = false;
-                sunshine.pair(pinField.text,
-                              nameField.text.length > 0 ? nameField.text : qsTr("Unnamed device"),
-                              webUiUserField.text,
-                              webUiPasswordField.text);
+                root.sunshine.pair(pinField.text,
+                                    nameField.text.length > 0 ? nameField.text : qsTr("Unnamed device"),
+                                    webUiUserField.text,
+                                    webUiPasswordField.text);
             }
         }
     }
