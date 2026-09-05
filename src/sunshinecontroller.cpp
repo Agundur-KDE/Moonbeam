@@ -1,7 +1,15 @@
 #include "sunshinecontroller.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QSslConfiguration>
+#include <QSslError>
+#include <QSslSocket>
 #include <QStandardPaths>
 #include <QTcpSocket>
+#include <QUrl>
 
 SunshineController::SunshineController(QObject *parent)
     : QObject(parent)
@@ -47,6 +55,11 @@ bool SunshineController::canStop() const
     return m_state == State::RunningOwned;
 }
 
+bool SunshineController::pairingInProgress() const
+{
+    return m_pairingInProgress;
+}
+
 void SunshineController::refresh()
 {
     if (m_process.state() != QProcess::NotRunning) {
@@ -88,6 +101,55 @@ void SunshineController::stop()
     if (!m_process.waitForFinished(3000)) {
         m_process.kill();
     }
+}
+
+void SunshineController::pair(const QString &pin, const QString &deviceName, const QString &webUiUser, const QString &webUiPassword)
+{
+    if (m_pairingInProgress) {
+        return;
+    }
+
+    QNetworkRequest request(QUrl(QStringLiteral("https://127.0.0.1:%1/api/pin").arg(WebUiPort)));
+    request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
+
+    const QByteArray credentials = (webUiUser + QStringLiteral(":") + webUiPassword).toUtf8().toBase64();
+    request.setRawHeader("Authorization", "Basic " + credentials);
+
+    // Sunshine's cert is self-signed; we're talking to our own local
+    // instance over loopback, so there's no meaningful identity to verify.
+    QSslConfiguration sslConfig = request.sslConfiguration();
+    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+    request.setSslConfiguration(sslConfig);
+
+    const QJsonObject body {
+        {QStringLiteral("pin"), pin},
+        {QStringLiteral("name"), deviceName},
+    };
+
+    m_pairingInProgress = true;
+    Q_EMIT pairingInProgressChanged();
+
+    QNetworkReply *reply = m_network.post(request, QJsonDocument(body).toJson());
+    connect(reply, &QNetworkReply::sslErrors, reply, [reply](const QList<QSslError> &) {
+        reply->ignoreSslErrors();
+    });
+    connect(reply, &QNetworkReply::finished, this, [this, reply] {
+        reply->deleteLater();
+        m_pairingInProgress = false;
+        Q_EMIT pairingInProgressChanged();
+
+        if (reply->error() != QNetworkReply::NoError) {
+            Q_EMIT pairingFailed(reply->errorString());
+            return;
+        }
+
+        const auto response = QJsonDocument::fromJson(reply->readAll()).object();
+        if (response.value(QStringLiteral("status")).toBool()) {
+            Q_EMIT pairingSucceeded();
+        } else {
+            Q_EMIT pairingFailed(QStringLiteral("Sunshine rejected the PIN"));
+        }
+    });
 }
 
 void SunshineController::setState(State newState)

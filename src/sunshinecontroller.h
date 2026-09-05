@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QNetworkAccessManager>
 #include <QObject>
 #include <QProcess>
 #include <QString>
@@ -43,6 +44,7 @@ public:
     Q_PROPERTY(QString statusText READ statusText NOTIFY stateChanged)
     Q_PROPERTY(bool canStart READ canStart NOTIFY stateChanged)
     Q_PROPERTY(bool canStop READ canStop NOTIFY stateChanged)
+    Q_PROPERTY(bool pairingInProgress READ pairingInProgress NOTIFY pairingInProgressChanged)
 
     explicit SunshineController(QObject *parent = nullptr);
 
@@ -50,21 +52,37 @@ public:
     QString statusText() const;
     bool canStart() const;
     bool canStop() const;
+    bool pairingInProgress() const;
 
 public Q_SLOTS:
     void refresh();
     void start();
     void stop();
 
+    /**
+     * Submit a Moonlight pairing PIN to Sunshine's local web UI API
+     * (POST /api/pin on 127.0.0.1). Requires the web UI's own username/
+     * password - verified live that Sunshine does NOT exempt loopback
+     * connections from authentication (a plausible reading of the source
+     * turned out to be wrong for the installed version; confirmed with curl
+     * before wiring this up).
+     */
+    void pair(const QString &pin, const QString &deviceName, const QString &webUiUser, const QString &webUiPassword);
+
 Q_SIGNALS:
     void stateChanged();
+    void pairingInProgressChanged();
+    void pairingSucceeded();
+    void pairingFailed(const QString &reason);
 
 private:
     void setState(State newState);
     bool isPortOpen(quint16 port, int timeoutMs = 300) const;
 
     QProcess m_process;
+    QNetworkAccessManager m_network;
     State m_state = State::Checking;
+    bool m_pairingInProgress = false;
     QString m_executablePath;
 
     static constexpr quint16 WebUiPort = 47990;
