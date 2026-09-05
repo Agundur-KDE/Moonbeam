@@ -75,11 +75,13 @@ public Q_SLOTS:
 
     /**
      * Submit a Moonlight pairing PIN to Sunshine's local web UI API
-     * (POST /api/pin on 127.0.0.1). Requires the web UI's own username/
-     * password - verified live that Sunshine does NOT exempt loopback
-     * connections from authentication (a plausible reading of the source
-     * turned out to be wrong for the installed version; confirmed with curl
-     * before wiring this up).
+     * (POST /api/pin on 127.0.0.1). webUiUser/webUiPassword should come
+     * from the SunshineCredentials singleton (KWallet-backed) - QML reads
+     * them from there once SunshineCredentials.state is Ready, so a human
+     * never types or sees them in the common case. Kept as parameters
+     * here (rather than this class owning a SunshineCredentials instance
+     * itself) to avoid two independent instances both racing to generate
+     * fresh credentials the first time a wallet entry doesn't exist yet.
      */
     void pair(const QString &pin, const QString &deviceName, const QString &webUiUser, const QString &webUiPassword);
 

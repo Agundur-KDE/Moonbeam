@@ -21,6 +21,7 @@ find_package(KF6 REQUIRED COMPONENTS
     Kirigami
     Config
     Notifications
+    Wallet
 )
 
 qt_add_executable(moonbeam
@@ -37,6 +38,8 @@ qt_add_qml_module(moonbeam
     SOURCES
         src/sunshinecontroller.h
         src/sunshinecontroller.cpp
+        src/sunshinecredentials.h
+        src/sunshinecredentials.cpp
 )
 
 target_include_directories(moonbeam PRIVATE src)
@@ -54,6 +57,7 @@ target_link_libraries(moonbeam PRIVATE
     KF6::ConfigCore
     KF6::ConfigGui
     KF6::Notifications
+    KF6::Wallet
 )
 
 install(TARGETS moonbeam ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
