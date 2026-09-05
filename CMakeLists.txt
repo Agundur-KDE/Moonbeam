@@ -38,8 +38,6 @@ qt_add_qml_module(moonbeam
     SOURCES
         src/sunshinecontroller.h
         src/sunshinecontroller.cpp
-    RESOURCES
-        assets/icon.svg
 )
 
 target_include_directories(moonbeam PRIVATE src)
@@ -60,3 +58,6 @@ target_link_libraries(moonbeam PRIVATE
 
 install(TARGETS moonbeam ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(PROGRAMS org.agundur.moonbeam.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES assets/icons/org.agundur.moonbeam.png
+    DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/512x512/apps
+)
