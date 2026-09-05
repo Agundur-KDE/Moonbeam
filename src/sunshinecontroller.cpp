@@ -116,10 +116,15 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
     request.setRawHeader("Authorization", "Basic " + credentials);
 
     // Sunshine's cert is self-signed; we're talking to our own local
-    // instance over loopback, so there's no meaningful identity to verify.
+    // instance over loopback (not a real network hop an attacker could
+    // sit on without already having a foothold on this machine), so
+    // there's no meaningful identity to verify. Deliberately not doing
+    // certificate pinning here - real mitigation for a threat model this
+    // app doesn't have.
     QSslConfiguration sslConfig = request.sslConfiguration();
     sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
     request.setSslConfiguration(sslConfig);
+    request.setTransferTimeout(5000);
 
     const QJsonObject body {
         {QStringLiteral("pin"), pin},
@@ -143,8 +148,13 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
             return;
         }
 
-        const auto response = QJsonDocument::fromJson(reply->readAll()).object();
-        if (response.value(QStringLiteral("status")).toBool()) {
+        const auto document = QJsonDocument::fromJson(reply->readAll());
+        if (!document.isObject()) {
+            Q_EMIT pairingFailed(QStringLiteral("Unexpected response from Sunshine"));
+            return;
+        }
+
+        if (document.object().value(QStringLiteral("status")).toBool()) {
             Q_EMIT pairingSucceeded();
         } else {
             Q_EMIT pairingFailed(QStringLiteral("Sunshine rejected the PIN"));
