@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Moonbeam
+Comment=Share your desktop or cast media over the network
+Exec=moonbeam
+Icon=org.agundur.moonbeam
+Terminal=false
+Categories=Network;RemoteAccess;Qt;KDE;
