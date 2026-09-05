@@ -2,11 +2,12 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
 import org.kde.kirigami as Kirigami
+import org.kde.coreaddons as CoreAddons
 import org.agundur.moonbeam
 
 Kirigami.ScrollablePage {
     id: root
-    title: qsTr("Share Desktop")
+    title: i18n("Share Desktop")
 
     readonly property var sunshine: SunshineController
     readonly property bool isSharing: root.sunshine.state === SunshineController.RunningOwned
@@ -22,6 +23,20 @@ Kirigami.ScrollablePage {
         default:
             return "video-display-off";
         }
+    }
+
+    actions: [
+        Kirigami.Action {
+            text: i18n("About Moonbeam")
+            icon.name: "help-about"
+            onTriggered: applicationWindow().pageStack.push(aboutPage)
+        }
+    ]
+
+    Kirigami.AboutPage {
+        id: aboutPage
+        visible: false
+        aboutData: CoreAddons.AboutData
     }
 
     ColumnLayout {
@@ -45,21 +60,21 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             visible: root.sunshine.state === SunshineController.NotInstalled
             type: Kirigami.MessageType.Warning
-            text: qsTr("Sunshine isn't installed. Install it with your package manager, e.g. `sudo zypper install sunshine` on openSUSE.")
+            text: i18n("Sunshine isn't installed. Install it with your package manager, e.g. `sudo zypper install sunshine` on openSUSE.")
         }
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
             visible: root.sunshine.state === SunshineController.RunningExternal
             type: Kirigami.MessageType.Information
-            text: qsTr("An existing Sunshine instance is already running - Moonbeam is using it, not starting a second one.")
+            text: i18n("An existing Sunshine instance is already running - Moonbeam is using it, not starting a second one.")
         }
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
             visible: root.isSharing
             type: Kirigami.MessageType.Information
-            text: qsTr("Connect from Moonlight on your TV, tablet, or phone. First time on a new device? You'll need a pairing PIN.")
+            text: i18n("Connect from Moonlight on your TV, tablet, or phone. First time on a new device? You'll need a pairing PIN.")
         }
 
         RowLayout {
@@ -67,14 +82,14 @@ Kirigami.ScrollablePage {
             spacing: Kirigami.Units.largeSpacing
 
             Controls.Button {
-                text: root.sunshine.canStop ? qsTr("Stop Sharing") : qsTr("Start Sharing")
+                text: root.sunshine.canStop ? i18n("Stop Sharing") : i18n("Start Sharing")
                 icon.name: root.sunshine.canStop ? "media-playback-stop" : "media-playback-start"
                 enabled: root.sunshine.canStart || root.sunshine.canStop
                 onClicked: root.sunshine.canStop ? root.sunshine.stop() : root.sunshine.start()
             }
 
             Controls.Button {
-                text: qsTr("Pair a Device")
+                text: i18n("Pair a Device")
                 icon.name: "network-connect"
                 enabled: root.isSharing
                 onClicked: applicationWindow().pageStack.push(Qt.resolvedUrl("PairingPage.qml"))

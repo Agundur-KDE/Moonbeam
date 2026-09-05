@@ -4,7 +4,7 @@ import org.agundur.moonbeam
 
 Kirigami.ApplicationWindow {
     id: root
-    title: qsTr("Moonbeam")
+    title: "Moonbeam"
 
     width: 480
     height: 640

@@ -40,6 +40,10 @@ SunshineController::SunshineController(QObject *parent)
     connect(&m_process, &QProcess::finished, this, &SunshineController::refresh);
     connect(&m_process, &QProcess::errorOccurred, this, &SunshineController::refresh);
 
+    m_refreshTimer.setInterval(5000);
+    connect(&m_refreshTimer, &QTimer::timeout, this, &SunshineController::refresh);
+    m_refreshTimer.start();
+
     refresh();
 }
 

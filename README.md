@@ -20,6 +20,15 @@ singleton" below) that:
 - reads the real web UI port from Sunshine's own config (`port` + 1) instead
   of hardcoding 47990
 - pairs a Moonlight client via a real `POST /api/pin` call
+- manages the web UI credentials itself via KWallet (`SunshineCredentials`) -
+  generates and stores them on first use, or asks once for an existing
+  password Moonbeam didn't set - never a form field a human has to fill in
+  every time
+- refreshes its status every 5s so the UI notices when an externally-started
+  Sunshine instance disappears on its own
+- has a real About dialog (`Kirigami.AboutPage` + `KAboutData`) and uses
+  KDE's i18n pipeline (`i18n()` in QML, not Qt's `qsTr()`) - "Moonbeam" the
+  app name itself is deliberately left untranslated
 
 Single page app now (Status + a pushed Pairing page) - no more drawer
 navigation now that media casting isn't Moonbeam's job.
@@ -52,19 +61,15 @@ navigation now that media casting isn't Moonbeam's job.
   already spawns `catt` (Plasma5Support's "executable" engine), plus a
   "Moonbeam not installed" fallback message - the same prerequisites-check
   philosophy as Moonbeam's own Sunshine check, just one level up.
-- **Prerequisites check, not a setup wizard.** Rely on the system's
-  `sunshine` (`Requires: sunshine` in the RPM) instead of bundling/building
-  our own — avoids the ~15min Sunshine+FFmpeg build entirely. But a package
-  dependency alone doesn't cover non-RPM installs (Flatpak, source builds),
-  and "installed" isn't the same as "safe to start": we hit a real
-  credential-overwrite bug today because two Sunshine processes shared the
-  same `~/.config/sunshine` state dir, and Sunshine's ports (47989/47990/...)
-  aren't shareable either. So on startup, check: is `sunshine` on PATH, is
-  an instance already running (which port), and surface that as one plain
-  status line/message ("Sunshine not found — install with ...", "Sunshine
-  already running on port X, using it") — not a multi-step wizard, just the
-  same check we need internally anyway before deciding whether to spawn a
-  new process or attach to an existing one.
+- **RPM packaging.** `Requires: sunshine` instead of bundling/building our
+  own Sunshine fork — avoids the ~15min Sunshine+FFmpeg build entirely. The
+  prerequisites check itself (is `sunshine` on PATH, already running, which
+  port, is it actually Sunshine) is already implemented as an inline
+  StatusPage message rather than a setup wizard - what's still missing is
+  the actual `.spec` file (see KCast's `packaging/kcast.spec` for the
+  pattern) and CI to build it. A package dependency still won't cover
+  non-RPM installs (Flatpak, source builds) - those get the same runtime
+  check, just without the OS nudging the user to install Sunshine upfront.
 - **Capture scope.** Which physical output to share (`output_name` in
   Sunshine's config, e.g. `HDMI-A-1` vs `DP-1`) is trivial — already proven
   live. Sharing a single window or an arbitrary screen region is not

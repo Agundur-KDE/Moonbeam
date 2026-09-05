@@ -1,4 +1,5 @@
 #include <KAboutData>
+#include <KLocalizedQmlContext>
 #include <KLocalizedString>
 
 #include <QGuiApplication>
@@ -23,6 +24,11 @@ int main(int argc, char *argv[])
     app.setWindowIcon(QIcon::fromTheme(QStringLiteral("org.agundur.moonbeam")));
 
     QQmlApplicationEngine engine;
+    // Makes i18n()/i18nc()/... available as global functions in every QML
+    // file, the same way qsTr() is always available - without this, QML
+    // would need plain Qt translation (.ts/.qm) instead of KDE's i18n
+    // pipeline (.pot/.po, ki18n_install()).
+    KLocalization::setupLocalizedContext(&engine);
     QObject::connect(
         &engine, &QQmlApplicationEngine::warnings, &engine, [](const QList<QQmlError> &warnings) {
             for (const auto &warning : warnings) {

@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QProcess>
 #include <QString>
+#include <QTimer>
 #include <qqmlintegration.h>
 
 /**
@@ -37,6 +38,12 @@
  * simultaneously), but this is cooperative locking between Moonbeam
  * instances only - it does not protect against Sunshine being started by
  * some entirely different tool at the same moment.
+ *
+ * A periodic timer calls refresh() every few seconds so the UI notices
+ * when a RunningExternal instance (one Moonbeam didn't start, so it isn't
+ * told about via QProcess signals) disappears on its own - without this,
+ * the status would stay stuck on "Sharing desktop" after an external
+ * Sunshine crashed or was stopped by something else.
  */
 class SunshineController : public QObject
 {
@@ -99,8 +106,8 @@ private:
 
     QProcess m_process;
     QNetworkAccessManager m_network;
+    QTimer m_refreshTimer;
     State m_state = State::Checking;
     bool m_pairingInProgress = false;
-    bool m_refreshPending = false;
     QString m_executablePath;
 };
