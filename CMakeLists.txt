@@ -34,7 +34,6 @@ qt_add_qml_module(moonbeam
         qml/Main.qml
         qml/pages/StatusPage.qml
         qml/pages/PairingPage.qml
-        qml/pages/MediaCastPage.qml
     SOURCES
         src/sunshinecontroller.h
         src/sunshinecontroller.cpp

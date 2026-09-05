@@ -1,7 +1,12 @@
 # Moonbeam
 
-Kirigami companion app for [KCast](https://github.com/Agundur-KDE/KCast): share
-your desktop over the network (Sunshine/Moonlight) and cast media, from one app.
+Kirigami companion app for [KCast](https://github.com/Agundur-KDE/KCast):
+share your desktop over the network via Sunshine/Moonlight.
+
+Single-purpose on its own - media casting stays KCast's job. The plan is
+for KCast to grow a "Share Desktop" launcher that starts Moonbeam, not for
+Moonbeam to reimplement or embed KCast's cast flow; two overlapping cast
+UIs in two apps would just compete with each other.
 
 ## Status
 
@@ -16,7 +21,8 @@ singleton" below) that:
   of hardcoding 47990
 - pairs a Moonlight client via a real `POST /api/pin` call
 
-Media casting is still a placeholder page for KCast's existing flow.
+Single page app now (Status + a pushed Pairing page) - no more drawer
+navigation now that media casting isn't Moonbeam's job.
 
 ### Known limitations (not yet fixed)
 
@@ -32,6 +38,11 @@ Media casting is still a placeholder page for KCast's existing flow.
 
 ## Roadmap ideas
 
+- **KCast launcher button (lives in KCast's repo, not here).** KCast should
+  get a "Share Desktop" action that spawns `moonbeam` the same way it
+  already spawns `catt` (Plasma5Support's "executable" engine), plus a
+  "Moonbeam not installed" fallback message - the same prerequisites-check
+  philosophy as Moonbeam's own Sunshine check, just one level up.
 - **Prerequisites check, not a setup wizard.** Rely on the system's
   `sunshine` (`Requires: sunshine` in the RPM) instead of bundling/building
   our own — avoids the ~15min Sunshine+FFmpeg build entirely. But a package
