@@ -15,6 +15,13 @@
  * itself started (RunningOwned) - an externally running instance
  * (RunningExternal) is left alone.
  *
+ * Known limitation: the port check is not a lock. There is a TOCTOU window
+ * between refresh() and start() - two SunshineController instances (or two
+ * Moonbeam processes) checking at the same moment could both see Stopped
+ * and both start a process. Acceptable for a single-user desktop app driven
+ * by manual button clicks; would need a real lock file for anything more
+ * concurrent than that.
+ *
  * Pairing/PIN handling and config generation are not implemented yet.
  */
 class SunshineController : public QObject

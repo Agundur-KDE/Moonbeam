@@ -85,6 +85,9 @@ void SunshineController::stop()
     }
 
     m_process.terminate();
+    if (!m_process.waitForFinished(3000)) {
+        m_process.kill();
+    }
 }
 
 void SunshineController::setState(State newState)
