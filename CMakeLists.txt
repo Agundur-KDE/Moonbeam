@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.21)
 project(moonbeam VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -12,7 +12,9 @@ include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 
+set(QT_DEFAULT_MAJOR_VERSION 6)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Qml Quick QuickControls2)
+qt_standard_project_setup(REQUIRES 6.5)
 find_package(KF6 REQUIRED COMPONENTS
     CoreAddons
     I18n
@@ -23,7 +25,6 @@ find_package(KF6 REQUIRED COMPONENTS
 
 qt_add_executable(moonbeam
     src/main.cpp
-    src/sunshinecontroller.cpp
 )
 
 qt_add_qml_module(moonbeam
@@ -34,9 +35,14 @@ qt_add_qml_module(moonbeam
         qml/pages/StatusPage.qml
         qml/pages/PairingPage.qml
         qml/pages/MediaCastPage.qml
+    SOURCES
+        src/sunshinecontroller.h
+        src/sunshinecontroller.cpp
     RESOURCES
         assets/icon.svg
 )
+
+target_include_directories(moonbeam PRIVATE src)
 
 target_link_libraries(moonbeam PRIVATE
     Qt6::Core
