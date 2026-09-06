@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Agundur <info@agundur.de>
+// SPDX-License-Identifier: GPL-3.0-only
+
 #include <KAboutData>
 #include <KLocalizedQmlContext>
 #include <KLocalizedString>

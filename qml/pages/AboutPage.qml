@@ -89,10 +89,8 @@ Kirigami.ScrollablePage {
             onClicked: Qt.openUrlExternally("https://github.com/Agundur-KDE/Moonbeam/issues")
         }
 
-        // Separate from "Report a Bug": matches the de.agundur.kcast
-        // plasmoid's own BugReportUrl convention
-        // ("mailto:info@agundur.de?subject=KCast%20bug%20report") for
-        // reaching Agundur directly, not routed through GitHub at all.
+        // Separate from "Report a Bug": a direct contact route, not
+        // routed through GitHub at all.
         Controls.Button {
             Layout.fillWidth: true
             flat: true
