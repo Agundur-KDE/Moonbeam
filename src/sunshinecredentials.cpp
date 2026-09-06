@@ -99,6 +99,15 @@ void SunshineCredentials::ensure()
     const QString user = GeneratedUser;
     const QString password = generateRandomPassword();
 
+    // audit.txt S-04: Sunshine's own CLI (`sunshine --help`) offers no way
+    // to set web UI credentials other than as plain `--creds user pass`
+    // arguments - no stdin or protected-file option exists to set them via.
+    // That leaves a brief window (until this process exits, a few seconds
+    // at most) where another process belonging to this user, or a process
+    // monitor, could read the password from /proc. Not eliminable without
+    // a change on Sunshine's side; kept as small as possible by not
+    // logging the command line and letting the process exit immediately
+    // after this call.
     QProcess creds;
     creds.start(sunshineBin, {QStringLiteral("--creds"), user, password});
     creds.waitForFinished(5000);

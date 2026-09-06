@@ -65,7 +65,10 @@ Kirigami.ScrollablePage {
             visible: root.credentials.state === SunshineCredentials.NeedsExistingPassword
             text: i18n("Remember Password")
             enabled: existingPasswordField.text.length > 0
-            onClicked: root.credentials.provideExisting(existingPasswordField.text)
+            onClicked: {
+                root.credentials.provideExisting(existingPasswordField.text);
+                existingPasswordField.text = "";
+            }
         }
 
         Kirigami.InlineMessage {

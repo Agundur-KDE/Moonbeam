@@ -49,6 +49,15 @@ navigation now that media casting isn't Moonbeam's job.
 - `pair()`'s PIN validation lives only in the QML `IntValidator` plus
   Sunshine's own server-side check - there's no redundant validation in
   `SunshineController` itself.
+- The web UI password is briefly visible as a `sunshine --creds` process
+  argument when generating fresh credentials, and is held as a QML-visible
+  `SunshineCredentials.password` property - Sunshine's own CLI has no
+  stdin/file alternative to the former, and fixing the latter would need
+  `SunshineController` to reach into `SunshineCredentials` for pairing
+  directly rather than being handed the password from QML, which risks
+  reintroducing the two-instances-racing-to-generate-credentials hazard
+  `SunshineCredentials` was built to avoid. Documented in code at both
+  sites (audit.txt S-04, S-07).
 
 ## Roadmap ideas
 
