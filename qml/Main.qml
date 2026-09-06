@@ -23,7 +23,25 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: i18n("About Moonbeam")
                 icon.name: "help-about"
-                onTriggered: root.pageStack.layers.push(Qt.resolvedUrl("pages/AboutPage.qml"))
+                // pageStack.layers is a QQC2.StackView whose initialItem
+                // is the normal page view itself - so depth is 1 with no
+                // layer open, not 0. Guarding on the wrong baseline here
+                // meant this condition was never true, so nothing ever
+                // happened on click - completely independent of isMenu
+                // true/false, which was a dead end chased before this was
+                // found. Guards against the actual bug this depth check
+                // was meant to fix: pageStack.layers.push() doesn't
+                // prevent pushing onto itself while already showing a
+                // layer, so clicking "About" more than once used to stack
+                // another copy on top each time (the back arrow then had
+                // to be clicked once per stacked copy instead of
+                // returning to Main immediately - "browser history"
+                // behavior).
+                onTriggered: {
+                    if (root.pageStack.layers.depth === 1) {
+                        root.pageStack.layers.push(Qt.resolvedUrl("pages/AboutPage.qml"));
+                    }
+                }
             },
             Kirigami.Action {
                 text: i18n("Quit")

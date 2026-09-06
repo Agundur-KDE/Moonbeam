@@ -150,10 +150,7 @@ Kirigami.ScrollablePage {
         }
 
         RowLayout {
-            Layout.fillWidth: true
-
             Controls.CheckBox {
-                Layout.fillWidth: true
                 text: i18n("Surround audio (5.1/7.1)")
                 checked: root.sunshine.surroundAudio
                 enabled: root.sunshine.canStart
