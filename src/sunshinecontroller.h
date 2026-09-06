@@ -81,6 +81,7 @@ public:
     Q_PROPERTY(bool canStop READ canStop NOTIFY stateChanged)
     Q_PROPERTY(bool pairingInProgress READ pairingInProgress NOTIFY pairingInProgressChanged)
     Q_PROPERTY(bool viewOnly READ viewOnly WRITE setViewOnly NOTIFY viewOnlyChanged)
+    Q_PROPERTY(bool surroundAudio READ surroundAudio WRITE setSurroundAudio NOTIFY surroundAudioChanged)
     Q_PROPERTY(QString webUiUrl READ webUiUrl NOTIFY stateChanged)
 
     using ExecutableFinder = std::function<QString()>;
@@ -120,6 +121,20 @@ public:
     void setViewOnly(bool viewOnly);
 
     /**
+     * Whether Sunshine's `audio_sink` config points at Moonbeam's
+     * well-known multichannel sink name (SunshineAudioConfig) instead of
+     * the default (auto-selected, normally stereo) monitor. This is only
+     * the config half of surround audio - it does nothing on its own
+     * unless a matching PipeWire/PulseAudio sink with the right channel
+     * map has been created separately (StatusPage.qml's "?" button next
+     * to this setting explains how). Same start-only restriction as
+     * viewOnly, for the same reason: takes effect on Sunshine's next
+     * start.
+     */
+    bool surroundAudio() const;
+    void setSurroundAudio(bool surroundAudio);
+
+    /**
      * Sunshine's own web UI (its full settings: apps, display/output
      * choice, video/audio options - deliberately not duplicated in
      * Moonbeam's minimal UI), or an empty string if the configured port is
@@ -149,6 +164,7 @@ public Q_SLOTS:
 Q_SIGNALS:
     void stateChanged();
     void viewOnlyChanged();
+    void surroundAudioChanged();
     void pairingInProgressChanged();
     void pairingSucceeded();
     void pairingFailed(const QString &reason);

@@ -58,6 +58,8 @@ qt_add_qml_module(moonbeam
         src/isunshinecredentialsprocess.cpp
         src/sunshinepairingresponse.h
         src/sunshinepairingresponse.cpp
+        src/sunshineaudioconfig.h
+        src/sunshineaudioconfig.cpp
 )
 
 target_include_directories(moonbeam PRIVATE src)
@@ -136,6 +138,14 @@ target_include_directories(sunshinepairingresponsetest PRIVATE src)
 target_link_libraries(sunshinepairingresponsetest PRIVATE Qt6::Test)
 add_test(NAME sunshinepairingresponsetest COMMAND sunshinepairingresponsetest)
 
+add_executable(sunshineaudioconfigtest
+    tests/sunshineaudioconfigtest.cpp
+    src/sunshineaudioconfig.cpp
+)
+target_include_directories(sunshineaudioconfigtest PRIVATE src)
+target_link_libraries(sunshineaudioconfigtest PRIVATE Qt6::Test)
+add_test(NAME sunshineaudioconfigtest COMMAND sunshineaudioconfigtest)
+
 add_executable(sunshinecontrollertest
     tests/sunshinecontrollertest.cpp
     tests/fakes/fakesunshineprocess.h
@@ -144,6 +154,7 @@ add_executable(sunshinecontrollertest
     src/sunshineportconfig.cpp
     src/sunshineremotecontrolconfig.cpp
     src/sunshinepairingresponse.cpp
+    src/sunshineaudioconfig.cpp
     src/isunshineprocess.cpp
     src/isunshinenetworkprobe.cpp
 )

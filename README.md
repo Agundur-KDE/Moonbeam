@@ -22,6 +22,21 @@ singleton" below) that:
 - shows a "View only" switch (`SunshineRemoteControlConfig`) for turning off
   a paired client's mouse/keyboard/controller control - Sunshine grants full
   input control by default
+- shows a "Surround audio (5.1/7.1)" switch (`SunshineAudioConfig`) that
+  points Sunshine's `audio_sink` at a fixed, well-known multichannel sink
+  name (`moonbeam-surround.monitor`) instead of the default (auto-selected,
+  normally stereo) monitor - the "?" button next to it explains the PipeWire
+  sink you still need to create yourself first (`pactl load-module
+  module-null-sink ...`); Moonbeam only writes the config reference, it
+  doesn't create or manage that sink. Note this transports discrete
+  multichannel PCM (Opus), not a Dolby Atmos object-audio bitstream -
+  your receiver gets real 5.1/7.1 channels, not Atmos metadata.
+- has an "Open Web UI" link (`SunshineController::webUiUrl`) to Sunshine's
+  own web UI for settings Moonbeam deliberately doesn't duplicate (apps,
+  display/output choice, video/audio options), plus an on-page "Web UI
+  Login" display (masked password, copy buttons) once credentials are
+  ready - the browser's Basic-Auth prompt otherwise has nothing to show
+  the user, since these credentials are normally invisible in KWallet
 - reads the real web UI port from Sunshine's own config (`port` + 1) instead
   of hardcoding 47990
 - pairs a Moonlight client via a real `POST /api/pin` call
@@ -37,6 +52,21 @@ singleton" below) that:
 
 Single page app now (Status + a pushed Pairing page) - no more drawer
 navigation now that media casting isn't Moonbeam's job.
+
+### Changing View only / Surround audio while already sharing
+
+Both switches write to `sunshine.conf`, which Sunshine only reads at
+process start - so they're only clickable while `canStart()` is true
+(state `Stopped`), and toggling one while already sharing does nothing
+until the next restart. The gotcha in practice: the same button reads
+"Stop Sharing" while sharing and "Start Sharing" once stopped - it's easy
+to reflexively click that same spot twice (stop, then immediately start
+again) before the switches become interactable. The actual sequence:
+
+1. Click **Stop Sharing** (if currently sharing) and wait for the status
+   to read "Not sharing" - don't click that button again yet.
+2. Toggle **View only** / **Surround audio** now, while stopped.
+3. Click **Start Sharing** to apply the new config.
 
 ### Known limitations (not yet fixed)
 

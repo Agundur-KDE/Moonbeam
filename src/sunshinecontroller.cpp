@@ -1,4 +1,5 @@
 #include "sunshinecontroller.h"
+#include "sunshineaudioconfig.h"
 #include "sunshineidentity.h"
 #include "sunshinepairingresponse.h"
 #include "sunshineportconfig.h"
@@ -163,6 +164,26 @@ void SunshineController::setViewOnly(bool viewOnly)
     }
 
     Q_EMIT viewOnlyChanged();
+}
+
+bool SunshineController::surroundAudio() const
+{
+    return SunshineAudioConfig::isSurroundEnabled(sunshineConfigContents());
+}
+
+void SunshineController::setSurroundAudio(bool surroundAudio)
+{
+    // Same start-only restriction as setViewOnly(), for the same reason:
+    // Sunshine only reads audio_sink at process start.
+    if (!canStart() || this->surroundAudio() == surroundAudio) {
+        return;
+    }
+
+    if (!writeSunshineConfigContents(SunshineAudioConfig::withSurroundEnabled(sunshineConfigContents(), surroundAudio))) {
+        return;
+    }
+
+    Q_EMIT surroundAudioChanged();
 }
 
 QString SunshineController::webUiUrl() const

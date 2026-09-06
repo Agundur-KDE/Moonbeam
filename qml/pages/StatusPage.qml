@@ -45,6 +45,46 @@ Kirigami.ScrollablePage {
         aboutData: CoreAddons.AboutData
     }
 
+    Kirigami.Dialog {
+        id: surroundAudioHelp
+        title: i18n("Surround Audio Setup")
+        standardButtons: Kirigami.Dialog.Ok
+
+        ColumnLayout {
+            spacing: Kirigami.Units.smallSpacing
+
+            Controls.Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                text: i18n("This only tells Sunshine to use a multichannel audio device named \"moonbeam-surround\" - it doesn't create that device. Before enabling this, create a matching PipeWire sink yourself, e.g. for 5.1:")
+            }
+
+            RowLayout {
+                Controls.TextField {
+                    id: pactlCommandField
+                    Layout.fillWidth: true
+                    readOnly: true
+                    font.family: "monospace"
+                    text: "pactl load-module module-null-sink sink_name=moonbeam-surround channel_map=front-left,front-right,front-center,lfe,rear-left,rear-right"
+                }
+                Controls.Button {
+                    icon.name: "edit-copy"
+                    text: i18n("Copy")
+                    onClicked: {
+                        pactlCommandField.selectAll();
+                        pactlCommandField.copy();
+                    }
+                }
+            }
+
+            Controls.Label {
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                text: i18n("You'll also need to select 5.1/7.1 audio in the Moonlight client's own settings - that's a separate, per-device setting Moonbeam doesn't control.")
+            }
+        }
+    }
+
     ColumnLayout {
         width: parent.width
         spacing: Kirigami.Units.largeSpacing
@@ -108,6 +148,25 @@ Kirigami.ScrollablePage {
             checked: root.sunshine.viewOnly
             enabled: root.sunshine.canStart
             onToggled: root.sunshine.viewOnly = checked
+        }
+
+        RowLayout {
+            Layout.alignment: Qt.AlignHCenter
+
+            Controls.CheckBox {
+                text: i18n("Surround audio (5.1/7.1)")
+                checked: root.sunshine.surroundAudio
+                enabled: root.sunshine.canStart
+                onToggled: root.sunshine.surroundAudio = checked
+            }
+
+            Controls.ToolButton {
+                text: "?"
+                onClicked: surroundAudioHelp.open()
+
+                Controls.ToolTip.visible: hovered
+                Controls.ToolTip.text: i18n("What do I need to set up first?")
+            }
         }
 
         RowLayout {

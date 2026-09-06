@@ -61,6 +61,8 @@ private Q_SLOTS:
     void processCrashTriggersRefresh();
     void webUiUrlReflectsConfiguredPort();
     void webUiUrlEmptyWhenConfigInvalid();
+    void setSurroundAudioWritesConfigWhileStopped();
+    void setSurroundAudioIgnoredWhileSharing();
 };
 
 void SunshineControllerTest::notInstalledWhenExecutableMissing()
@@ -340,6 +342,47 @@ void SunshineControllerTest::webUiUrlEmptyWhenConfigInvalid()
                                    });
 
     QVERIFY(controller.webUiUrl().isEmpty());
+}
+
+void SunshineControllerTest::setSurroundAudioWritesConfigWhileStopped()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    SunshineController controller(std::make_unique<FakeSunshineProcess>(),
+                                   std::make_unique<FakeSunshineNetworkProbe>(),
+                                   std::make_unique<QNetworkAccessManager>(),
+                                   dir.path(),
+                                   dir.filePath(QStringLiteral("start.lock")),
+                                   [] {
+                                       return QStringLiteral("/usr/bin/sunshine-fake");
+                                   });
+
+    QVERIFY(!controller.surroundAudio());
+    controller.setSurroundAudio(true);
+    QVERIFY(controller.surroundAudio());
+}
+
+void SunshineControllerTest::setSurroundAudioIgnoredWhileSharing()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    SunshineController controller(std::make_unique<FakeSunshineProcess>(),
+                                   std::make_unique<FakeSunshineNetworkProbe>(),
+                                   std::make_unique<QNetworkAccessManager>(),
+                                   dir.path(),
+                                   dir.filePath(QStringLiteral("start.lock")),
+                                   [] {
+                                       return QStringLiteral("/usr/bin/sunshine-fake");
+                                   });
+
+    controller.start();
+    QCOMPARE(controller.state(), SunshineController::State::RunningOwned);
+
+    controller.setSurroundAudio(true);
+
+    QVERIFY(!controller.surroundAudio());
 }
 
 QTEST_GUILESS_MAIN(SunshineControllerTest)
