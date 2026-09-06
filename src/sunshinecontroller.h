@@ -66,6 +66,7 @@ public:
     Q_PROPERTY(bool canStart READ canStart NOTIFY stateChanged)
     Q_PROPERTY(bool canStop READ canStop NOTIFY stateChanged)
     Q_PROPERTY(bool pairingInProgress READ pairingInProgress NOTIFY pairingInProgressChanged)
+    Q_PROPERTY(bool viewOnly READ viewOnly WRITE setViewOnly NOTIFY viewOnlyChanged)
 
     explicit SunshineController(QObject *parent = nullptr);
 
@@ -74,6 +75,16 @@ public:
     bool canStart() const;
     bool canStop() const;
     bool pairingInProgress() const;
+
+    /**
+     * Whether a paired Moonlight client only sees the screen, without
+     * mouse/keyboard/controller control (audit.txt S-03: Sunshine's own
+     * default is full control of every input device). Reflects
+     * sunshine.conf on disk; only takes effect the next time Sunshine
+     * starts, so the setter is a no-op unless canStart() is true.
+     */
+    bool viewOnly() const;
+    void setViewOnly(bool viewOnly);
 
 public Q_SLOTS:
     void refresh();
@@ -94,6 +105,7 @@ public Q_SLOTS:
 
 Q_SIGNALS:
     void stateChanged();
+    void viewOnlyChanged();
     void pairingInProgressChanged();
     void pairingSucceeded();
     void pairingFailed(const QString &reason);
@@ -105,6 +117,7 @@ private:
     quint16 resolveWebUiPort() const;
     QString sunshineConfigDir() const;
     QString sunshineConfigContents() const;
+    bool writeSunshineConfigContents(const QString &contents) const;
     QByteArray pinnedCertificateFingerprint() const;
 
     QProcess m_process;

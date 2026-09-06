@@ -14,9 +14,14 @@ Builds and runs. `SunshineController` is a QML singleton (see "Why a
 singleton" below) that:
 - detects whether Sunshine is installed, already running, or stopped, and
   never starts a second instance against an already-open web UI port
-- verifies a candidate port actually belongs to Sunshine (its self-signed
-  cert's CN, "Sunshine Gamestream Host") before trusting it or sending it
-  credentials, rather than assuming any process on that port is Sunshine
+- verifies a candidate port actually belongs to Sunshine by pinning the
+  exact SHA-256 fingerprint of the certificate Sunshine is configured to
+  serve (`SunshineIdentity`), not just a CN string any local process could
+  put in a self-signed certificate of its own, before trusting it or
+  sending it credentials
+- shows a "View only" switch (`SunshineRemoteControlConfig`) for turning off
+  a paired client's mouse/keyboard/controller control - Sunshine grants full
+  input control by default
 - reads the real web UI port from Sunshine's own config (`port` + 1) instead
   of hardcoding 47990
 - pairs a Moonlight client via a real `POST /api/pin` call
@@ -47,15 +52,6 @@ navigation now that media casting isn't Moonbeam's job.
 
 ## Roadmap ideas
 
-- **View-only toggle.** A paired Moonlight client gets full mouse/keyboard/
-  controller control of the host by default (Sunshine emulates real input
-  devices - `input.cpp`) - not just a screen view. Sunshine has real config
-  keys for this: `mouse = false`, `keyboard = false`, `controller = false`
-  (confirmed in `config.cpp`, `bool_f(vars, "mouse"/"keyboard"/"controller",
-  ...)`) turn each input type off entirely. Worth a "View only" switch on
-  the Status page for presenting/screen-sharing use cases where the viewer
-  shouldn't be able to touch anything - would just toggle those three
-  config keys.
 - **KCast launcher button (lives in KCast's repo, not here).** KCast should
   get a "Share Desktop" action that spawns `moonbeam` the same way it
   already spawns `catt` (Plasma5Support's "executable" engine), plus a

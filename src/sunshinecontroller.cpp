@@ -1,5 +1,6 @@
 #include "sunshinecontroller.h"
 #include "sunshineidentity.h"
+#include "sunshineremotecontrolconfig.h"
 
 #include <QDir>
 #include <QFile>
@@ -93,6 +94,39 @@ QString SunshineController::sunshineConfigContents() const
         return {};
     }
     return QString::fromUtf8(file.readAll());
+}
+
+bool SunshineController::writeSunshineConfigContents(const QString &contents) const
+{
+    QDir().mkpath(sunshineConfigDir());
+    QFile file(sunshineConfigDir() + QStringLiteral("/sunshine.conf"));
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text)) {
+        return false;
+    }
+    return file.write(contents.toUtf8()) >= 0;
+}
+
+bool SunshineController::viewOnly() const
+{
+    return SunshineRemoteControlConfig::isViewOnly(sunshineConfigContents());
+}
+
+void SunshineController::setViewOnly(bool viewOnly)
+{
+    // Sunshine only reads its config at process start, so toggling this
+    // while a "RunningOwned"/"RunningExternal" instance is already up
+    // would silently do nothing until the next restart - only allow it
+    // while stopped, so the property always reflects what will actually
+    // apply.
+    if (!canStart() || this->viewOnly() == viewOnly) {
+        return;
+    }
+
+    if (!writeSunshineConfigContents(SunshineRemoteControlConfig::withViewOnly(sunshineConfigContents(), viewOnly))) {
+        return;
+    }
+
+    Q_EMIT viewOnlyChanged();
 }
 
 QByteArray SunshineController::pinnedCertificateFingerprint() const

@@ -77,6 +77,26 @@ Kirigami.ScrollablePage {
             text: i18n("Connect from Moonlight on your TV, tablet, or phone. First time on a new device? You'll need a pairing PIN.")
         }
 
+        // A paired Moonlight client gets full mouse/keyboard/controller
+        // control of this PC by default (Sunshine emulates real input
+        // devices) - not just a screen view. Shown whenever that's
+        // currently the case, so it's never a silent surprise for
+        // presenting/screen-sharing use cases.
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
+            visible: !root.sunshine.viewOnly
+            type: Kirigami.MessageType.Warning
+            text: i18n("Anyone who pairs a device gets full mouse, keyboard, and controller control of this PC - not just a screen view.")
+        }
+
+        Controls.CheckBox {
+            Layout.alignment: Qt.AlignHCenter
+            text: i18n("View only (no mouse/keyboard/controller control)")
+            checked: root.sunshine.viewOnly
+            enabled: root.sunshine.canStart
+            onToggled: root.sunshine.viewOnly = checked
+        }
+
         RowLayout {
             Layout.alignment: Qt.AlignHCenter
             spacing: Kirigami.Units.largeSpacing

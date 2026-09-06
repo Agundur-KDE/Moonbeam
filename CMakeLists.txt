@@ -44,6 +44,8 @@ qt_add_qml_module(moonbeam
         src/sunshineidentity.cpp
         src/sunshinecredentialsstate.h
         src/sunshinecredentialsstate.cpp
+        src/sunshineremotecontrolconfig.h
+        src/sunshineremotecontrolconfig.cpp
 )
 
 target_include_directories(moonbeam PRIVATE src)
@@ -97,6 +99,14 @@ add_executable(sunshinecredentialsstatetest
 target_include_directories(sunshinecredentialsstatetest PRIVATE src)
 target_link_libraries(sunshinecredentialsstatetest PRIVATE Qt6::Test)
 add_test(NAME sunshinecredentialsstatetest COMMAND sunshinecredentialsstatetest)
+
+add_executable(sunshineremotecontrolconfigtest
+    tests/sunshineremotecontrolconfigtest.cpp
+    src/sunshineremotecontrolconfig.cpp
+)
+target_include_directories(sunshineremotecontrolconfigtest PRIVATE src)
+target_link_libraries(sunshineremotecontrolconfigtest PRIVATE Qt6::Test)
+add_test(NAME sunshineremotecontrolconfigtest COMMAND sunshineremotecontrolconfigtest)
 
 install(TARGETS moonbeam ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(PROGRAMS org.agundur.moonbeam.desktop DESTINATION ${KDE_INSTALL_APPDIR})
