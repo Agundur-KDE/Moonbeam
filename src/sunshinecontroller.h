@@ -81,6 +81,7 @@ public:
     Q_PROPERTY(bool canStop READ canStop NOTIFY stateChanged)
     Q_PROPERTY(bool pairingInProgress READ pairingInProgress NOTIFY pairingInProgressChanged)
     Q_PROPERTY(bool viewOnly READ viewOnly WRITE setViewOnly NOTIFY viewOnlyChanged)
+    Q_PROPERTY(QString webUiUrl READ webUiUrl NOTIFY stateChanged)
 
     using ExecutableFinder = std::function<QString()>;
 
@@ -117,6 +118,16 @@ public:
      */
     bool viewOnly() const;
     void setViewOnly(bool viewOnly);
+
+    /**
+     * Sunshine's own web UI (its full settings: apps, display/output
+     * choice, video/audio options - deliberately not duplicated in
+     * Moonbeam's minimal UI), or an empty string if the configured port is
+     * invalid. Points at 127.0.0.1 over HTTPS with Sunshine's self-signed
+     * cert, so opening it will show the browser's usual untrusted-cert
+     * warning - expected, not a Moonbeam bug.
+     */
+    QString webUiUrl() const;
 
 public Q_SLOTS:
     void refresh();

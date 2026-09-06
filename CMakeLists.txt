@@ -162,7 +162,7 @@ add_executable(sunshinecredentialstest
     src/isunshinecredentialsprocess.cpp
 )
 target_include_directories(sunshinecredentialstest PRIVATE src tests)
-target_link_libraries(sunshinecredentialstest PRIVATE Qt6::Test Qt6::Qml KF6::Wallet)
+target_link_libraries(sunshinecredentialstest PRIVATE Qt6::Test Qt6::Gui Qt6::Qml KF6::Wallet)
 add_test(NAME sunshinecredentialstest COMMAND sunshinecredentialstest)
 
 install(TARGETS moonbeam ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

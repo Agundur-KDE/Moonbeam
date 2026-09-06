@@ -59,6 +59,8 @@ private Q_SLOTS:
     void startRefusesWhenLockIsHeldByAnotherProcess_parallelProcesses();
     void stopTerminatesThenKillsOnTimeout_hungProcess();
     void processCrashTriggersRefresh();
+    void webUiUrlReflectsConfiguredPort();
+    void webUiUrlEmptyWhenConfigInvalid();
 };
 
 void SunshineControllerTest::notInstalledWhenExecutableMissing()
@@ -302,6 +304,42 @@ void SunshineControllerTest::processCrashTriggersRefresh()
 
     QVERIFY(!stateChangedSpy.isEmpty());
     QCOMPARE(controller.state(), SunshineController::State::Stopped);
+}
+
+void SunshineControllerTest::webUiUrlReflectsConfiguredPort()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    writeFile(dir.filePath(QStringLiteral("sunshine.conf")), "port = 12345\n");
+
+    SunshineController controller(std::make_unique<FakeSunshineProcess>(),
+                                   std::make_unique<FakeSunshineNetworkProbe>(),
+                                   std::make_unique<QNetworkAccessManager>(),
+                                   dir.path(),
+                                   dir.filePath(QStringLiteral("start.lock")),
+                                   [] {
+                                       return QStringLiteral("/usr/bin/sunshine-fake");
+                                   });
+
+    QCOMPARE(controller.webUiUrl(), QStringLiteral("https://127.0.0.1:12346"));
+}
+
+void SunshineControllerTest::webUiUrlEmptyWhenConfigInvalid()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    writeFile(dir.filePath(QStringLiteral("sunshine.conf")), "port = 65535\n");
+
+    SunshineController controller(std::make_unique<FakeSunshineProcess>(),
+                                   std::make_unique<FakeSunshineNetworkProbe>(),
+                                   std::make_unique<QNetworkAccessManager>(),
+                                   dir.path(),
+                                   dir.filePath(QStringLiteral("start.lock")),
+                                   [] {
+                                       return QStringLiteral("/usr/bin/sunshine-fake");
+                                   });
+
+    QVERIFY(controller.webUiUrl().isEmpty());
 }
 
 QTEST_GUILESS_MAIN(SunshineControllerTest)

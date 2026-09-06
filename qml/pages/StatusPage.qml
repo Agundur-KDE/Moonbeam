@@ -10,8 +10,14 @@ Kirigami.ScrollablePage {
     title: i18n("Share Desktop")
 
     readonly property var sunshine: SunshineController
+    readonly property var credentials: SunshineCredentials
     readonly property bool isSharing: root.sunshine.state === SunshineController.RunningOwned
         || root.sunshine.state === SunshineController.RunningExternal
+
+    // So the Web UI login fields below are already populated by the time
+    // "Open Web UI" is clickable, without requiring a detour through the
+    // Pairing page first.
+    Component.onCompleted: root.credentials.ensure()
 
     function iconFor(state) {
         switch (state) {
@@ -120,6 +126,69 @@ Kirigami.ScrollablePage {
                 icon.name: "network-connect"
                 enabled: root.isSharing
                 onClicked: applicationWindow().pageStack.push(Qt.resolvedUrl("PairingPage.qml"))
+            }
+
+            Controls.Button {
+                text: i18n("Open Web UI")
+                icon.name: "internet-web-browser"
+                enabled: root.isSharing
+                onClicked: Qt.openUrlExternally(root.sunshine.webUiUrl)
+            }
+        }
+
+        // Sunshine's web UI asks for these same credentials via the
+        // browser's own Basic-Auth prompt - shown here (masked, copy
+        // buttons only) so the user has something to paste into it rather
+        // than having to dig them out of KWallet by hand.
+        ColumnLayout {
+            Layout.alignment: Qt.AlignHCenter
+            visible: root.isSharing && root.credentials.state === SunshineCredentials.Ready
+            spacing: Kirigami.Units.smallSpacing
+
+            Kirigami.Heading {
+                Layout.alignment: Qt.AlignHCenter
+                text: i18n("Web UI Login")
+                level: 4
+            }
+
+            RowLayout {
+                Controls.Label {
+                    text: i18n("Username:")
+                }
+                Controls.TextField {
+                    id: webUiUserField
+                    readOnly: true
+                    text: root.credentials.user
+                }
+                Controls.Button {
+                    icon.name: "edit-copy"
+                    text: i18n("Copy")
+                    onClicked: {
+                        webUiUserField.selectAll();
+                        webUiUserField.copy();
+                    }
+                }
+            }
+
+            RowLayout {
+                Controls.Label {
+                    text: i18n("Password:")
+                }
+                Controls.TextField {
+                    id: webUiPasswordField
+                    readOnly: true
+                    echoMode: TextInput.Password
+                    text: root.credentials.password
+                }
+                Controls.Button {
+                    icon.name: "edit-copy"
+                    text: i18n("Copy")
+                    // TextInput.copy() silently refuses to copy anything
+                    // while echoMode is Password (Qt's own anti-shoulder-
+                    // surfing measure) - copying the password has to go
+                    // through C++ directly instead.
+                    onClicked: root.credentials.copyPasswordToClipboard()
+                }
             }
         }
     }

@@ -60,14 +60,16 @@ public:
     // audit.txt S-07: exposing the password to QML at all widens the
     // disclosure surface (any QML/JS code with access to this singleton
     // can read it, not just the one pairing call site that currently
-    // does). Not removed here: SunshineController::pair() needs it for
-    // HTTP Basic Auth, and doing that lookup entirely in C++ instead would
-    // mean SunshineController owning or reaching into a SunshineCredentials
-    // instance itself - the exact two-instances-racing-to-generate-fresh-
-    // credentials hazard pair()'s own doc comment says was deliberately
-    // avoided. Left as a documented residual risk pending that redesign;
-    // PairingPage.qml only reads this once, at the moment of calling
-    // pair(), not via a persistent binding.
+    // does). Two known, deliberate readers as of this writing:
+    // SunshineController::pair() needs it for HTTP Basic Auth (see that
+    // function's own doc comment for why the lookup isn't done in C++
+    // instead), and StatusPage.qml displays it (masked, with a copy
+    // button) so the user can log into Sunshine's own web UI, which asks
+    // for these same credentials via a browser Basic-Auth prompt - showing
+    // the account owner their own password behind a reveal/copy action is
+    // a different threat model than the "any QML code in the app can read
+    // it" concern this note is about, so that binding is a deliberate
+    // exception, not an oversight.
     Q_PROPERTY(QString password READ password NOTIFY stateChanged)
 
     using ExecutableFinder = std::function<QString()>;
@@ -108,6 +110,15 @@ public Q_SLOTS:
      * again for this username.
      */
     void provideExisting(const QString &password);
+
+    /**
+     * Copies the password to the system clipboard directly, bypassing
+     * QML's TextInput.copy() - which silently refuses to copy anything
+     * when echoMode is Password, a built-in Qt anti-shoulder-surfing
+     * measure that would otherwise make StatusPage.qml's "Copy" button
+     * next to the masked password field a silent no-op.
+     */
+    void copyPasswordToClipboard() const;
 
 Q_SIGNALS:
     void stateChanged();

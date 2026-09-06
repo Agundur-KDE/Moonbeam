@@ -1,7 +1,9 @@
 #include "sunshinecredentials.h"
 #include "sunshinecredentialsstate.h"
 
+#include <QClipboard>
 #include <QDir>
+#include <QGuiApplication>
 #include <QLockFile>
 #include <QRandomGenerator>
 #include <QStandardPaths>
@@ -182,6 +184,11 @@ void SunshineCredentials::provideExisting(const QString &password)
 
     m_password = password;
     setState(State::Ready);
+}
+
+void SunshineCredentials::copyPasswordToClipboard() const
+{
+    QGuiApplication::clipboard()->setText(m_password);
 }
 
 void SunshineCredentials::setState(State newState)

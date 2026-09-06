@@ -165,6 +165,15 @@ void SunshineController::setViewOnly(bool viewOnly)
     Q_EMIT viewOnlyChanged();
 }
 
+QString SunshineController::webUiUrl() const
+{
+    const auto port = resolveWebUiPort();
+    if (!port.has_value()) {
+        return {};
+    }
+    return QStringLiteral("https://127.0.0.1:%1").arg(*port);
+}
+
 QByteArray SunshineController::pinnedCertificateFingerprint() const
 {
     const QString certPath = SunshineIdentity::certificatePath(sunshineConfigDir(), sunshineConfigContents());
