@@ -1,5 +1,6 @@
 #include "sunshinecontroller.h"
 #include "sunshineidentity.h"
+#include "sunshineportconfig.h"
 #include "sunshineremotecontrolconfig.h"
 
 #include <QDir>
@@ -9,25 +10,12 @@
 #include <QLockFile>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include <QRegularExpression>
 #include <QSslConfiguration>
 #include <QSslError>
 #include <QSslSocket>
 #include <QStandardPaths>
 #include <QTcpSocket>
 #include <QUrl>
-
-namespace
-{
-// Sunshine derives its web UI port as (configured base `port`, default
-// 47989) + 1 (confighttp::PORT_HTTPS offset), see config.cpp. Reading the
-// actual config avoids treating a custom-port Sunshine as "not running"
-// and starting a conflicting second instance on the default port.
-quint16 defaultBasePort()
-{
-    return 47989;
-}
-}
 
 SunshineController::SunshineController(QObject *parent)
     : QObject(parent)
@@ -55,6 +43,8 @@ QString SunshineController::statusText() const
         return QStringLiteral("Checking Sunshine…");
     case State::NotInstalled:
         return QStringLiteral("Sunshine not found — install it first");
+    case State::ConfigInvalid:
+        return QStringLiteral("Sunshine's configured port is invalid — check sunshine.conf");
     case State::Stopped:
         return QStringLiteral("Not sharing");
     case State::RunningExternal:
@@ -135,17 +125,9 @@ QByteArray SunshineController::pinnedCertificateFingerprint() const
     return SunshineIdentity::certificateFingerprint(certPath);
 }
 
-quint16 SunshineController::resolveWebUiPort() const
+std::optional<quint16> SunshineController::resolveWebUiPort() const
 {
-    quint16 basePort = defaultBasePort();
-
-    static const QRegularExpression portLine(QStringLiteral("^\\s*port\\s*=\\s*(\\d+)\\s*$"), QRegularExpression::MultilineOption);
-    auto it = portLine.globalMatch(sunshineConfigContents());
-    while (it.hasNext()) {
-        basePort = static_cast<quint16>(it.next().captured(1).toUInt());
-    }
-
-    return basePort + 1;
+    return SunshinePortConfig::resolveWebUiPort(sunshineConfigContents());
 }
 
 void SunshineController::refresh()
@@ -155,8 +137,16 @@ void SunshineController::refresh()
         return;
     }
 
-    const quint16 webUiPort = resolveWebUiPort();
-    if (isPortOpen(webUiPort) && isSunshineAt(webUiPort)) {
+    const auto webUiPort = resolveWebUiPort();
+    if (!webUiPort.has_value()) {
+        // audit.txt S-06: an unparsable or out-of-range `port` in
+        // sunshine.conf must never be guessed at (silently truncated, or
+        // wrapped via overflow) - refuse to start, and say why.
+        setState(State::ConfigInvalid);
+        return;
+    }
+
+    if (isPortOpen(*webUiPort) && isSunshineAt(*webUiPort)) {
         setState(State::RunningExternal);
         return;
     }
@@ -209,7 +199,11 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
         return;
     }
 
-    const quint16 webUiPort = resolveWebUiPort();
+    const auto webUiPort = resolveWebUiPort();
+    if (!webUiPort.has_value()) {
+        Q_EMIT pairingFailed(QStringLiteral("Sunshine's configured port is invalid - check sunshine.conf"));
+        return;
+    }
 
     const QByteArray pinnedFingerprint = pinnedCertificateFingerprint();
     if (pinnedFingerprint.isEmpty()) {
@@ -217,7 +211,7 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
         return;
     }
 
-    QNetworkRequest request(QUrl(QStringLiteral("https://127.0.0.1:%1/api/pin").arg(webUiPort)));
+    QNetworkRequest request(QUrl(QStringLiteral("https://127.0.0.1:%1/api/pin").arg(*webUiPort)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
 
     const QByteArray credentials = (webUiUser + QStringLiteral(":") + webUiPassword).toUtf8().toBase64();

@@ -65,6 +65,13 @@ Kirigami.ScrollablePage {
 
         Kirigami.InlineMessage {
             Layout.fillWidth: true
+            visible: root.sunshine.state === SunshineController.ConfigInvalid
+            type: Kirigami.MessageType.Error
+            text: i18n("Sunshine's configured port in sunshine.conf is invalid, so Moonbeam can't safely check or start it. Fix the `port` value there first.")
+        }
+
+        Kirigami.InlineMessage {
+            Layout.fillWidth: true
             visible: root.sunshine.state === SunshineController.RunningExternal
             type: Kirigami.MessageType.Information
             text: i18n("An existing Sunshine instance is already running - Moonbeam is using it, not starting a second one.")
