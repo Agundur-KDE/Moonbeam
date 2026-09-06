@@ -21,9 +21,8 @@ int main(int argc, char *argv[])
                           KAboutLicense::GPL_V3,
                           i18n("(c) 2026 Agundur"));
     aboutData.setHomepage(QStringLiteral("https://github.com/Agundur-KDE/Moonbeam"));
-    aboutData.setUrl(KAboutData::UrlType::Bugtracker,
-                      QStringLiteral("https://bugs.kde.org/enter_bug.cgi?format=guided&product=moonbeam&version=0.1.0"));
-    aboutData.setUrl(KAboutData::UrlType::Donation, QStringLiteral("https://kde.org/de/donate/?app=moonbeam"));
+    aboutData.setUrl(KAboutData::UrlType::Bugtracker, QStringLiteral("https://github.com/Agundur-KDE/Moonbeam/issues"));
+    aboutData.setUrl(KAboutData::UrlType::Donation, QStringLiteral("https://github.com/sponsors/Agundur-KDE"));
     aboutData.setUrl(KAboutData::UrlType::Contribute, QStringLiteral("https://github.com/Agundur-KDE/Moonbeam/discussions"));
     KAboutData::setApplicationData(aboutData);
     app.setWindowIcon(QIcon::fromTheme(QStringLiteral("org.agundur.moonbeam")));
