@@ -36,6 +36,17 @@ QString certificatePath(const QString &configDir, const QString &configContents)
 QByteArray certificateFingerprint(const QString &certPath);
 
 /**
+ * Loads the certificate at certPath, or a null QSslCertificate if the file
+ * is missing, unreadable, or not a valid certificate. Used to install the
+ * pinned certificate itself as the *sole* trusted CA for a connection (see
+ * SunshineController::pair(), audit.txt S-01) - unlike a fingerprint check
+ * that only runs inside an sslErrors handler, this makes an unpinned
+ * certificate fail chain validation structurally, even one that some
+ * other, broader trust store would otherwise accept without error.
+ */
+QSslCertificate loadCertificate(const QString &certPath);
+
+/**
  * True iff certificate's SHA-256 digest exactly matches pinnedFingerprint.
  * An empty pinnedFingerprint (identity could not be resolved) always
  * returns false - "cannot verify" must never be treated as "matches

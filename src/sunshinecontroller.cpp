@@ -7,6 +7,7 @@
 
 #include <KLocalizedString>
 
+#include <algorithm>
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
@@ -284,29 +285,40 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
         return;
     }
 
-    const QByteArray pinnedFingerprint = pinnedCertificateFingerprint();
-    if (pinnedFingerprint.isEmpty()) {
+    const QString certPath = SunshineIdentity::certificatePath(sunshineConfigDir(), sunshineConfigContents());
+    const QSslCertificate pinnedCert = SunshineIdentity::loadCertificate(certPath);
+    const QByteArray pinnedFingerprint = SunshineIdentity::certificateFingerprint(certPath);
+    if (pinnedCert.isNull() || pinnedFingerprint.isEmpty()) {
         Q_EMIT pairingFailed(i18n("Could not determine Sunshine's certificate - refusing to send credentials"));
         return;
     }
 
     QNetworkRequest request(QUrl(QStringLiteral("https://127.0.0.1:%1/api/pin").arg(*webUiPort)));
     request.setHeader(QNetworkRequest::ContentTypeHeader, QStringLiteral("application/json"));
+    // Never follow a redirect on this request: the Authorization header set
+    // below must not be replayed against a different destination.
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
 
     const QByteArray credentials = (webUiUser + QStringLiteral(":") + webUiPassword).toUtf8().toBase64();
     request.setRawHeader("Authorization", "Basic " + credentials);
 
-    // Sunshine's cert is self-signed, so the CA-chain check below is
-    // expected to fail - that alone is not a reason to reject it. What
-    // actually decides trust is the sslErrors handler below, which pins
-    // the exact certificate fingerprint (see SunshineIdentity) and only
-    // proceeds - meaning only then does the Authorization header above
-    // actually get sent - when that fingerprint matches. This also closes
-    // the TOCTOU a separate isSunshineAt() probe-then-connect would leave
-    // open: verification happens on this exact TLS connection, not a
-    // previous one that something could have swapped out afterward.
+    // audit.txt S-01: pins trust structurally instead of reactively. The
+    // pinned certificate is installed as the *only* CA this connection
+    // accepts; Sunshine's self-signed leaf validates against it directly
+    // (a zero-depth chain, leaf == trusted root) exactly when the server
+    // presents this exact certificate, and fails chain validation for
+    // anything else - including a certificate that some broader, system-
+    // wide trust store would otherwise accept without any error at all.
+    // The previous version relied on Qt actually emitting an sslErrors
+    // signal for the presented certificate before the fingerprint was ever
+    // checked; VerifyNone made that signal unreliable, and even with
+    // VerifyPeer a certificate Qt already trusts by other means would
+    // never reach the check either. Restricting the CA list closes both
+    // gaps: the "accept" path and the "reject" path are now the same
+    // structural check, not two independently-necessary ones.
     QSslConfiguration sslConfig = request.sslConfiguration();
-    sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
+    sslConfig.setPeerVerifyMode(QSslSocket::VerifyPeer);
+    sslConfig.setCaCertificates({pinnedCert});
     request.setSslConfiguration(sslConfig);
     request.setTransferTimeout(5000);
 
@@ -319,20 +331,49 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
     Q_EMIT pairingInProgressChanged();
 
     QNetworkReply *reply = m_network->post(request, QJsonDocument(body).toJson());
-    connect(reply, &QNetworkReply::sslErrors, reply, [reply, pinnedFingerprint](const QList<QSslError> &) {
-        if (SunshineIdentity::matchesPinnedFingerprint(reply->sslConfiguration().peerCertificate(), pinnedFingerprint)) {
-            reply->ignoreSslErrors();
+    connect(reply, &QNetworkReply::sslErrors, reply, [reply, pinnedFingerprint](const QList<QSslError> &errors) {
+        // With the CA list restricted above, chain-of-trust errors are
+        // already impossible for anything other than the pinned
+        // certificate - but a *real* Sunshine certificate has no Subject
+        // Alternative Name for 127.0.0.1 (verified against an actual
+        // installed instance, not just this project's test fixtures), so
+        // connecting by IP always raises QSslError::HostNameMismatch even
+        // for the correct certificate. That specific, expected error is
+        // the only one ever ignored, and only once the fingerprint itself
+        // has already been confirmed to match - anything else (a
+        // different certificate, or any other error type) aborts.
+        const QSslCertificate peerCert = reply->sslConfiguration().peerCertificate();
+        if (!SunshineIdentity::matchesPinnedFingerprint(peerCert, pinnedFingerprint)) {
+            reply->abort();
+            return;
+        }
+
+        const bool onlyExpectedHostnameMismatch = std::all_of(errors.cbegin(), errors.cend(), [](const QSslError &error) {
+            return error.error() == QSslError::HostNameMismatch;
+        });
+
+        if (onlyExpectedHostnameMismatch) {
+            reply->ignoreSslErrors(errors);
         } else {
             reply->abort();
         }
     });
-    connect(reply, &QNetworkReply::finished, this, [this, reply] {
+    connect(reply, &QNetworkReply::finished, this, [this, reply, pinnedFingerprint] {
         reply->deleteLater();
         m_pairingInProgress = false;
         Q_EMIT pairingInProgressChanged();
 
         if (reply->error() != QNetworkReply::NoError) {
             Q_EMIT pairingFailed(reply->errorString());
+            return;
+        }
+
+        // Belt-and-suspenders (audit.txt S-01, recommendation 4): re-check
+        // the fingerprint independently of the error path above, so a
+        // future change in chain-validation behavior can't silently widen
+        // trust without this still catching it.
+        if (!SunshineIdentity::matchesPinnedFingerprint(reply->sslConfiguration().peerCertificate(), pinnedFingerprint)) {
+            Q_EMIT pairingFailed(i18n("Sunshine's certificate did not match the pinned identity"));
             return;
         }
 

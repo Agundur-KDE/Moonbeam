@@ -29,14 +29,19 @@ QString SunshineIdentity::certificatePath(const QString &configDir, const QStrin
     return QDir(configDir).filePath(configuredPath);
 }
 
-QByteArray SunshineIdentity::certificateFingerprint(const QString &certPath)
+QSslCertificate SunshineIdentity::loadCertificate(const QString &certPath)
 {
     QFile file(certPath);
     if (!file.open(QIODevice::ReadOnly)) {
-        return {};
+        return QSslCertificate();
     }
 
-    const QSslCertificate certificate(file.readAll(), QSsl::Pem);
+    return QSslCertificate(file.readAll(), QSsl::Pem);
+}
+
+QByteArray SunshineIdentity::certificateFingerprint(const QString &certPath)
+{
+    const QSslCertificate certificate = loadCertificate(certPath);
     if (certificate.isNull()) {
         return {};
     }
