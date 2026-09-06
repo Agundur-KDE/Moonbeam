@@ -2,8 +2,8 @@
   <img src="assets/icons/org.agundur.moonbeam.png" width="120" alt="Moonbeam icon">
   <h1>Moonbeam</h1>
   <p><strong>Switch presenters, not cables.</strong><br>
-  Wireless screen sharing for KDE Plasma — start sharing, enter a PIN on the
-  other device, and you're presenting.</p>
+  Wireless screen sharing for KDE Plasma — start sharing, then enter the PIN
+  Moonlight shows you and you're presenting.</p>
 </div>
 
 <p align="center">
@@ -27,9 +27,10 @@ another device on the same Wi-Fi network.
 
 Under the hood, Moonbeam manages [Sunshine](https://github.com/LizardByte/Sunshine),
 the open-source continuation of NVIDIA GameStream — a real-time,
-hardware-encoded streaming host, not a buffered casting protocol. Moonbeam
-handles it so you don't have to: you never touch Sunshine's own web UI,
-generate a certificate, or manage a password by hand.
+hardware-encoded streaming host, not a buffered casting protocol. For
+normal pairing and sharing, you don't need to use Sunshine's web UI,
+generate a certificate, or manage its credentials by hand — Moonbeam
+handles all of that for you.
 
 It's a companion app for [KCast](https://github.com/Agundur-KDE/KCast),
 not a replacement — media casting (YouTube, Spotify, etc. to a Chromecast)
@@ -43,7 +44,8 @@ to duplicate each other's cast flow.
 2. Open [Moonlight](https://moonlight-stream.org/) on the receiving
    device — [Android](https://play.google.com/store/apps/details?id=com.limelight&pli=1),
    iOS, Windows, macOS, Linux, or a smart TV all work.
-3. First time on that device: enter the PIN Moonbeam shows you.
+3. First time on that device: Moonlight displays a PIN. Enter that PIN in
+   Moonbeam, on the computer you're sharing from.
 4. Present. Click **Stop Sharing** when you're done, or just hand off to
    the next presenter.
 
@@ -55,9 +57,9 @@ to duplicate each other's cast flow.
   instead of unplugging and reconnecting the room's display setup.
 - **Works with anything on your screen.** The app, website, game, or
   presentation doesn't need its own casting feature.
-- **Connects to the right computer.** Moonbeam verifies the device you
-  pair with, so you don't end up connected to another machine on the
-  same Wi-Fi network by mistake.
+- **Talks only to the intended Sunshine instance.** Before sending web UI
+  credentials, Moonbeam verifies the certificate presented by the local
+  Sunshine service against the certificate configured on this computer.
 - **Secure sign-in handled for you.** Moonbeam creates and stores the
   connection credentials automatically — nothing to type into a password
   field.
@@ -148,8 +150,9 @@ separately on whatever device you want to view/control the stream from.
   password Moonbeam didn't set - never a form field to fill in every time.
   An on-page "Web UI Login" display (masked, with copy buttons) covers the
   one case you do need them: the browser's own Basic-Auth prompt.
-- **Real pairing**, via Sunshine's actual `POST /api/pin` API - enter the
-  PIN Moonlight shows you, done.
+- **Real pairing**, via Sunshine's actual `POST /api/pin` API - Moonlight
+  displays the PIN on the receiving device, you enter it in Moonbeam on
+  the host, done.
 - **View only.** A paired Moonlight client gets full mouse/keyboard/
   controller control of the host by default (Sunshine emulates real input
   devices) - not just a screen view. One switch turns that off for
