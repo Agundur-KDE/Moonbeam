@@ -48,6 +48,16 @@ qt_add_qml_module(moonbeam
         src/sunshineremotecontrolconfig.cpp
         src/sunshineportconfig.h
         src/sunshineportconfig.cpp
+        src/isunshineprocess.h
+        src/isunshineprocess.cpp
+        src/isunshinenetworkprobe.h
+        src/isunshinenetworkprobe.cpp
+        src/isunshinewallet.h
+        src/isunshinewallet.cpp
+        src/isunshinecredentialsprocess.h
+        src/isunshinecredentialsprocess.cpp
+        src/sunshinepairingresponse.h
+        src/sunshinepairingresponse.cpp
 )
 
 target_include_directories(moonbeam PRIVATE src)
@@ -117,6 +127,43 @@ add_executable(sunshineportconfigtest
 target_include_directories(sunshineportconfigtest PRIVATE src)
 target_link_libraries(sunshineportconfigtest PRIVATE Qt6::Test)
 add_test(NAME sunshineportconfigtest COMMAND sunshineportconfigtest)
+
+add_executable(sunshinepairingresponsetest
+    tests/sunshinepairingresponsetest.cpp
+    src/sunshinepairingresponse.cpp
+)
+target_include_directories(sunshinepairingresponsetest PRIVATE src)
+target_link_libraries(sunshinepairingresponsetest PRIVATE Qt6::Test)
+add_test(NAME sunshinepairingresponsetest COMMAND sunshinepairingresponsetest)
+
+add_executable(sunshinecontrollertest
+    tests/sunshinecontrollertest.cpp
+    tests/fakes/fakesunshineprocess.h
+    src/sunshinecontroller.cpp
+    src/sunshineidentity.cpp
+    src/sunshineportconfig.cpp
+    src/sunshineremotecontrolconfig.cpp
+    src/sunshinepairingresponse.cpp
+    src/isunshineprocess.cpp
+    src/isunshinenetworkprobe.cpp
+)
+target_include_directories(sunshinecontrollertest PRIVATE src tests)
+target_compile_definitions(sunshinecontrollertest PRIVATE
+    MOONBEAM_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures"
+)
+target_link_libraries(sunshinecontrollertest PRIVATE Qt6::Test Qt6::Network Qt6::Qml)
+add_test(NAME sunshinecontrollertest COMMAND sunshinecontrollertest)
+
+add_executable(sunshinecredentialstest
+    tests/sunshinecredentialstest.cpp
+    src/sunshinecredentials.cpp
+    src/sunshinecredentialsstate.cpp
+    src/isunshinewallet.cpp
+    src/isunshinecredentialsprocess.cpp
+)
+target_include_directories(sunshinecredentialstest PRIVATE src tests)
+target_link_libraries(sunshinecredentialstest PRIVATE Qt6::Test Qt6::Qml KF6::Wallet)
+add_test(NAME sunshinecredentialstest COMMAND sunshinecredentialstest)
 
 install(TARGETS moonbeam ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(PROGRAMS org.agundur.moonbeam.desktop DESTINATION ${KDE_INSTALL_APPDIR})

@@ -1,18 +1,22 @@
 #pragma once
 
+#include "isunshinenetworkprobe.h"
+#include "isunshineprocess.h"
+
 #include <QNetworkAccessManager>
 #include <QObject>
-#include <QProcess>
 #include <QString>
 #include <QTimer>
+#include <functional>
+#include <memory>
 #include <optional>
 #include <qqmlintegration.h>
 
 /**
  * Controller around a Sunshine process. Exposed to QML as a singleton
- * (QML_SINGLETON) rather than a per-page instance: it owns a live QProcess,
- * and an earlier per-page instantiation meant navigating between pages
- * could destroy the QProcess member and silently kill a running Sunshine
+ * (QML_SINGLETON) rather than a per-page instance: it owns a live process
+ * handle, and an earlier per-page instantiation meant navigating between
+ * pages could destroy that member and silently kill a running Sunshine
  * that this controller had started - the singleton removes that lifecycle
  * hazard entirely.
  *
@@ -31,8 +35,8 @@
  * A port merely responding is not proof it's Sunshine - some other local
  * process could be listening there. Before treating a port as an existing
  * Sunshine instance (and, critically, before ever sending pairing
- * credentials to it), an unauthenticated request is used to check for a
- * Sunshine-specific signature in the response.
+ * credentials to it), the exact certificate fingerprint Sunshine is
+ * configured to serve is pinned and checked (see SunshineIdentity).
  *
  * Known limitation: start() takes a QLockFile to close the most obvious
  * TOCTOU window (two Moonbeam processes racing to start Sunshine
@@ -42,9 +46,17 @@
  *
  * A periodic timer calls refresh() every few seconds so the UI notices
  * when a RunningExternal instance (one Moonbeam didn't start, so it isn't
- * told about via QProcess signals) disappears on its own - without this,
+ * told about via process signals) disappears on its own - without this,
  * the status would stay stuck on "Sharing desktop" after an external
  * Sunshine crashed or was stopped by something else.
+ *
+ * All real I/O (the Sunshine process, port/TLS probing, executable lookup,
+ * config directory, and the start-lock path) is reached only through
+ * injected seams (audit.txt R-01) - the public, QML-visible constructor
+ * wires up the real ones; a second constructor exists purely for tests to
+ * substitute fakes, so process crashes, timeouts, spoofed certificates, and
+ * lock contention can be exercised deterministically without touching a
+ * real process, socket, or the filesystem.
  */
 class SunshineController : public QObject
 {
@@ -70,7 +82,25 @@ public:
     Q_PROPERTY(bool pairingInProgress READ pairingInProgress NOTIFY pairingInProgressChanged)
     Q_PROPERTY(bool viewOnly READ viewOnly WRITE setViewOnly NOTIFY viewOnlyChanged)
 
+    using ExecutableFinder = std::function<QString()>;
+
     explicit SunshineController(QObject *parent = nullptr);
+
+    /**
+     * Test-only constructor: every real I/O seam is injected explicitly
+     * instead of defaulting to the real filesystem/process/network.
+     * configDir replaces "~/.config/sunshine" and startLockPath replaces
+     * the real temp-dir lock file path, so tests never touch the real
+     * Sunshine config or contend with a real Moonbeam instance's lock.
+     */
+    SunshineController(std::unique_ptr<ISunshineProcess> process,
+                        std::unique_ptr<ISunshineNetworkProbe> networkProbe,
+                        std::unique_ptr<QNetworkAccessManager> network,
+                        QString configDir,
+                        QString startLockPath,
+                        ExecutableFinder executableFinder,
+                        int startLockTimeoutMs = 2000,
+                        QObject *parent = nullptr);
 
     State state() const;
     QString statusText() const;
@@ -114,7 +144,6 @@ Q_SIGNALS:
 
 private:
     void setState(State newState);
-    bool isPortOpen(quint16 port, int timeoutMs = 300) const;
     bool isSunshineAt(quint16 port, int timeoutMs = 500) const;
     std::optional<quint16> resolveWebUiPort() const;
     QString sunshineConfigDir() const;
@@ -122,8 +151,13 @@ private:
     bool writeSunshineConfigContents(const QString &contents) const;
     QByteArray pinnedCertificateFingerprint() const;
 
-    QProcess m_process;
-    QNetworkAccessManager m_network;
+    std::unique_ptr<ISunshineProcess> m_process;
+    std::unique_ptr<ISunshineNetworkProbe> m_networkProbe;
+    std::unique_ptr<QNetworkAccessManager> m_network;
+    QString m_configDir;
+    QString m_startLockPath;
+    int m_startLockTimeoutMs;
+    ExecutableFinder m_executableFinder;
     QTimer m_refreshTimer;
     State m_state = State::Checking;
     bool m_pairingInProgress = false;

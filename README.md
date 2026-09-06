@@ -113,3 +113,19 @@ Config, Notifications, Wallet).
 cmake -B build -S .
 cmake --build build
 ```
+
+## Tests
+
+`SunshineController` and `SunshineCredentials` reach the real Sunshine
+process, sockets, KWallet, and filesystem only through injected interfaces
+(`ISunshineProcess`, `ISunshineNetworkProbe`, `ISunshineWallet`,
+`ISunshineCredentialsProcess`) - their public, QML-visible constructors wire
+up the real ones; a second constructor on each takes fakes instead, so
+`sunshinecontrollertest`/`sunshinecredentialstest` can exercise cert
+imitation, wrong ports, invalid config, parallel-process lock contention,
+wallet failures, process crashes/hangs, and tampered pairing responses
+without touching a real process, socket, wallet daemon, or file.
+
+```sh
+ctest --test-dir build --output-on-failure
+```

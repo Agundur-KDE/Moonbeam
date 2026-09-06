@@ -1,7 +1,12 @@
 #pragma once
 
+#include "isunshinecredentialsprocess.h"
+#include "isunshinewallet.h"
+
 #include <QObject>
 #include <QString>
+#include <functional>
+#include <memory>
 #include <qqmlintegration.h>
 
 /**
@@ -27,6 +32,13 @@
  * and re-check the wallet immediately after acquiring it - otherwise two
  * Moonbeam processes could each decide independently that no credentials
  * exist yet and race to set different ones.
+ *
+ * The wallet and the `sunshine --creds` process are reached only through
+ * injected seams (audit.txt R-01) - the public, QML-visible constructor
+ * wires up the real ones (KWallet, a real QProcess); a second constructor
+ * exists purely for tests to substitute fakes, so wallet failures, process
+ * crashes/timeouts, and lock contention can be exercised deterministically
+ * without touching a real wallet daemon, process, or the filesystem.
  */
 class SunshineCredentials : public QObject
 {
@@ -58,7 +70,25 @@ public:
     // pair(), not via a persistent binding.
     Q_PROPERTY(QString password READ password NOTIFY stateChanged)
 
+    using ExecutableFinder = std::function<QString()>;
+    using PasswordGenerator = std::function<QString()>;
+
     explicit SunshineCredentials(QObject *parent = nullptr);
+
+    /**
+     * Test-only constructor: every real I/O seam is injected explicitly.
+     * stateFilePath/lockPath replace the real "~/.config/sunshine/..." and
+     * temp-dir paths, so tests never touch real files or contend with a
+     * real Moonbeam instance's lock.
+     */
+    SunshineCredentials(std::unique_ptr<ISunshineWallet> wallet,
+                         std::unique_ptr<ISunshineCredentialsProcess> credentialsProcess,
+                         QString stateFilePath,
+                         QString lockPath,
+                         ExecutableFinder executableFinder,
+                         PasswordGenerator passwordGenerator,
+                         int lockTimeoutMs = 5000,
+                         QObject *parent = nullptr);
 
     State state() const;
     QString user() const;
@@ -84,10 +114,14 @@ Q_SIGNALS:
 
 private:
     void setState(State newState);
-    bool loadFromWallet();
-    bool saveToWallet(const QString &user, const QString &password);
-    QString findSunshineExecutable() const;
-    QString generateRandomPassword() const;
+
+    std::unique_ptr<ISunshineWallet> m_wallet;
+    std::unique_ptr<ISunshineCredentialsProcess> m_credentialsProcess;
+    QString m_stateFilePath;
+    QString m_lockPath;
+    int m_lockTimeoutMs;
+    ExecutableFinder m_executableFinder;
+    PasswordGenerator m_passwordGenerator;
 
     State m_state = State::Unknown;
     QString m_user;

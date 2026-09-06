@@ -1,21 +1,16 @@
 #include "sunshinecredentials.h"
 #include "sunshinecredentialsstate.h"
 
-#include <KWallet>
-
 #include <QDir>
 #include <QLockFile>
-#include <QProcess>
 #include <QRandomGenerator>
 #include <QStandardPaths>
 
 namespace
 {
-const QString WalletFolder = QStringLiteral("Moonbeam");
-const QString WalletKey = QStringLiteral("sunshine-webui");
 const QString GeneratedUser = QStringLiteral("moonbeam");
 
-QString sunshineStateFilePath()
+QString defaultStateFilePath()
 {
     return QDir::homePath() + QStringLiteral("/.config/sunshine/sunshine_state.json");
 }
@@ -25,14 +20,55 @@ QString sunshineStateFilePath()
 // processes could each decide independently that no credentials exist yet,
 // generate different passwords, both run `sunshine --creds`, and end up
 // with Sunshine's actual password and KWallet's stored copy disagreeing.
-QString credentialsLockPath()
+QString defaultLockPath()
 {
     return QDir::temp().filePath(QStringLiteral("moonbeam-sunshine-credentials.lock"));
+}
+
+QString findSunshineExecutable()
+{
+    return QStandardPaths::findExecutable(QStringLiteral("sunshine"));
+}
+
+QString generateRandomPassword()
+{
+    static const QString alphabet = QStringLiteral("ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789");
+    QString password;
+    for (int i = 0; i < 24; ++i) {
+        password.append(alphabet.at(QRandomGenerator::global()->bounded(alphabet.size())));
+    }
+    return password;
 }
 }
 
 SunshineCredentials::SunshineCredentials(QObject *parent)
+    : SunshineCredentials(std::make_unique<KWalletSunshineWallet>(),
+                           std::make_unique<QtSunshineCredentialsProcess>(),
+                           defaultStateFilePath(),
+                           defaultLockPath(),
+                           &findSunshineExecutable,
+                           &generateRandomPassword,
+                           5000,
+                           parent)
+{
+}
+
+SunshineCredentials::SunshineCredentials(std::unique_ptr<ISunshineWallet> wallet,
+                                          std::unique_ptr<ISunshineCredentialsProcess> credentialsProcess,
+                                          QString stateFilePath,
+                                          QString lockPath,
+                                          ExecutableFinder executableFinder,
+                                          PasswordGenerator passwordGenerator,
+                                          int lockTimeoutMs,
+                                          QObject *parent)
     : QObject(parent)
+    , m_wallet(std::move(wallet))
+    , m_credentialsProcess(std::move(credentialsProcess))
+    , m_stateFilePath(std::move(stateFilePath))
+    , m_lockPath(std::move(lockPath))
+    , m_lockTimeoutMs(lockTimeoutMs)
+    , m_executableFinder(std::move(executableFinder))
+    , m_passwordGenerator(std::move(passwordGenerator))
 {
 }
 
@@ -57,20 +93,24 @@ void SunshineCredentials::ensure()
         return;
     }
 
-    QLockFile lockFile(credentialsLockPath());
-    if (!lockFile.tryLock(5000)) {
+    QLockFile lockFile(m_lockPath);
+    if (!lockFile.tryLock(m_lockTimeoutMs)) {
         setState(State::Failed);
         return;
     }
 
     // Re-check after acquiring the lock: another Moonbeam process may have
     // already finished this exact setup while we were waiting for it.
-    if (loadFromWallet()) {
+    QString walletUser;
+    QString walletPassword;
+    if (m_wallet->readCredentials(walletUser, walletPassword)) {
+        m_user = walletUser;
+        m_password = walletPassword;
         setState(State::Ready);
         return;
     }
 
-    const auto probe = SunshineCredentialsState::probeConfiguredUsername(sunshineStateFilePath());
+    const auto probe = SunshineCredentialsState::probeConfiguredUsername(m_stateFilePath);
     if (probe.result == SunshineCredentialsState::Result::Indeterminate) {
         // Could not positively identify a fresh install (unreadable file,
         // unrecognized format, ...) - never guess "empty" from a read or
@@ -90,14 +130,14 @@ void SunshineCredentials::ensure()
     // Positively identified as fresh: no web UI credentials configured yet,
     // safe to generate our own and set them via `sunshine --creds`, which
     // works standalone without Sunshine needing to already be running.
-    const QString sunshineBin = findSunshineExecutable();
+    const QString sunshineBin = m_executableFinder();
     if (sunshineBin.isEmpty()) {
         setState(State::Failed);
         return;
     }
 
     const QString user = GeneratedUser;
-    const QString password = generateRandomPassword();
+    const QString password = m_passwordGenerator();
 
     // audit.txt S-04: Sunshine's own CLI (`sunshine --help`) offers no way
     // to set web UI credentials other than as plain `--creds user pass`
@@ -108,16 +148,12 @@ void SunshineCredentials::ensure()
     // a change on Sunshine's side; kept as small as possible by not
     // logging the command line and letting the process exit immediately
     // after this call.
-    QProcess creds;
-    creds.start(sunshineBin, {QStringLiteral("--creds"), user, password});
-    creds.waitForFinished(5000);
-
-    if (creds.exitStatus() != QProcess::NormalExit || creds.exitCode() != 0) {
+    if (!m_credentialsProcess->setCredentials(sunshineBin, user, password, 5000)) {
         setState(State::Failed);
         return;
     }
 
-    if (!saveToWallet(user, password)) {
+    if (!m_wallet->writeCredentials(user, password)) {
         setState(State::Failed);
         return;
     }
@@ -133,13 +169,13 @@ void SunshineCredentials::provideExisting(const QString &password)
         return;
     }
 
-    QLockFile lockFile(credentialsLockPath());
-    if (!lockFile.tryLock(5000)) {
+    QLockFile lockFile(m_lockPath);
+    if (!lockFile.tryLock(m_lockTimeoutMs)) {
         setState(State::Failed);
         return;
     }
 
-    if (!saveToWallet(m_user, password)) {
+    if (!m_wallet->writeCredentials(m_user, password)) {
         setState(State::Failed);
         return;
     }
@@ -156,57 +192,4 @@ void SunshineCredentials::setState(State newState)
 
     m_state = newState;
     Q_EMIT stateChanged();
-}
-
-bool SunshineCredentials::loadFromWallet()
-{
-    std::unique_ptr<KWallet::Wallet> wallet(
-        KWallet::Wallet::openWallet(KWallet::Wallet::LocalWallet(), 0, KWallet::Wallet::Synchronous));
-    if (!wallet || !wallet->hasFolder(WalletFolder)) {
-        return false;
-    }
-
-    wallet->setFolder(WalletFolder);
-    QMap<QString, QString> map;
-    if (wallet->readMap(WalletKey, map) != 0) {
-        return false;
-    }
-
-    m_user = map.value(QStringLiteral("user"));
-    m_password = map.value(QStringLiteral("password"));
-    return !m_user.isEmpty() && !m_password.isEmpty();
-}
-
-bool SunshineCredentials::saveToWallet(const QString &user, const QString &password)
-{
-    std::unique_ptr<KWallet::Wallet> wallet(
-        KWallet::Wallet::openWallet(KWallet::Wallet::LocalWallet(), 0, KWallet::Wallet::Synchronous));
-    if (!wallet) {
-        return false;
-    }
-
-    if (!wallet->hasFolder(WalletFolder) && !wallet->createFolder(WalletFolder)) {
-        return false;
-    }
-    wallet->setFolder(WalletFolder);
-
-    QMap<QString, QString> map;
-    map[QStringLiteral("user")] = user;
-    map[QStringLiteral("password")] = password;
-    return wallet->writeMap(WalletKey, map) == 0;
-}
-
-QString SunshineCredentials::findSunshineExecutable() const
-{
-    return QStandardPaths::findExecutable(QStringLiteral("sunshine"));
-}
-
-QString SunshineCredentials::generateRandomPassword() const
-{
-    static const QString alphabet = QStringLiteral("ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789");
-    QString password;
-    for (int i = 0; i < 24; ++i) {
-        password.append(alphabet.at(QRandomGenerator::global()->bounded(alphabet.size())));
-    }
-    return password;
 }

@@ -1,5 +1,6 @@
 #include "sunshinecontroller.h"
 #include "sunshineidentity.h"
+#include "sunshinepairingresponse.h"
 #include "sunshineportconfig.h"
 #include "sunshineremotecontrolconfig.h"
 
@@ -14,15 +15,60 @@
 #include <QSslError>
 #include <QSslSocket>
 #include <QStandardPaths>
-#include <QTcpSocket>
 #include <QUrl>
 
-SunshineController::SunshineController(QObject *parent)
-    : QObject(parent)
+namespace
 {
-    connect(&m_process, &QProcess::started, this, &SunshineController::refresh);
-    connect(&m_process, &QProcess::finished, this, &SunshineController::refresh);
-    connect(&m_process, &QProcess::errorOccurred, this, &SunshineController::refresh);
+QString defaultConfigDir()
+{
+    return QDir::homePath() + QStringLiteral("/.config/sunshine");
+}
+
+QString defaultStartLockPath()
+{
+    return QDir::temp().filePath(QStringLiteral("moonbeam-sunshine-start.lock"));
+}
+
+QString findSunshineExecutable()
+{
+    return QStandardPaths::findExecutable(QStringLiteral("sunshine"));
+}
+}
+
+SunshineController::SunshineController(QObject *parent)
+    : SunshineController(std::make_unique<QtSunshineProcess>(),
+                          std::make_unique<QtSunshineNetworkProbe>(),
+                          std::make_unique<QNetworkAccessManager>(),
+                          defaultConfigDir(),
+                          defaultStartLockPath(),
+                          &findSunshineExecutable,
+                          2000,
+                          parent)
+{
+}
+
+SunshineController::SunshineController(std::unique_ptr<ISunshineProcess> process,
+                                        std::unique_ptr<ISunshineNetworkProbe> networkProbe,
+                                        std::unique_ptr<QNetworkAccessManager> network,
+                                        QString configDir,
+                                        QString startLockPath,
+                                        ExecutableFinder executableFinder,
+                                        int startLockTimeoutMs,
+                                        QObject *parent)
+    : QObject(parent)
+    , m_process(std::move(process))
+    , m_networkProbe(std::move(networkProbe))
+    , m_network(std::move(network))
+    , m_configDir(std::move(configDir))
+    , m_startLockPath(std::move(startLockPath))
+    , m_startLockTimeoutMs(startLockTimeoutMs)
+    , m_executableFinder(std::move(executableFinder))
+{
+    m_network->setParent(this);
+
+    connect(m_process.get(), &ISunshineProcess::started, this, &SunshineController::refresh);
+    connect(m_process.get(), &ISunshineProcess::finished, this, &SunshineController::refresh);
+    connect(m_process.get(), &ISunshineProcess::errorOccurred, this, &SunshineController::refresh);
 
     m_refreshTimer.setInterval(5000);
     connect(&m_refreshTimer, &QTimer::timeout, this, &SunshineController::refresh);
@@ -74,7 +120,7 @@ bool SunshineController::pairingInProgress() const
 
 QString SunshineController::sunshineConfigDir() const
 {
-    return QDir::homePath() + QStringLiteral("/.config/sunshine");
+    return m_configDir;
 }
 
 QString SunshineController::sunshineConfigContents() const
@@ -132,7 +178,7 @@ std::optional<quint16> SunshineController::resolveWebUiPort() const
 
 void SunshineController::refresh()
 {
-    if (m_process.state() != QProcess::NotRunning) {
+    if (m_process->state() != QProcess::NotRunning) {
         setState(State::RunningOwned);
         return;
     }
@@ -146,13 +192,13 @@ void SunshineController::refresh()
         return;
     }
 
-    if (isPortOpen(*webUiPort) && isSunshineAt(*webUiPort)) {
+    if (m_networkProbe->isPortOpen(*webUiPort, 300) && isSunshineAt(*webUiPort)) {
         setState(State::RunningExternal);
         return;
     }
 
     if (m_executablePath.isEmpty()) {
-        m_executablePath = QStandardPaths::findExecutable(QStringLiteral("sunshine"));
+        m_executablePath = m_executableFinder();
     }
 
     setState(m_executablePath.isEmpty() ? State::NotInstalled : State::Stopped);
@@ -160,12 +206,13 @@ void SunshineController::refresh()
 
 void SunshineController::start()
 {
-    // Closes the TOCTOU window between the port check and QProcess::start():
-    // two Moonbeam processes racing here will have one win the lock and the
-    // other block briefly on tryLock(), then see RunningExternal on its own
-    // subsequent refresh() instead of also spawning a process.
-    QLockFile lockFile(QDir::temp().filePath(QStringLiteral("moonbeam-sunshine-start.lock")));
-    if (!lockFile.tryLock(2000)) {
+    // Closes the TOCTOU window between the port check and spawning a
+    // process: two Moonbeam processes racing here will have one win the
+    // lock and the other block briefly on tryLock(), then see
+    // RunningExternal on its own subsequent refresh() instead of also
+    // spawning a process.
+    QLockFile lockFile(m_startLockPath);
+    if (!lockFile.tryLock(m_startLockTimeoutMs)) {
         refresh();
         return;
     }
@@ -177,8 +224,8 @@ void SunshineController::start()
         return;
     }
 
-    m_process.start(m_executablePath, {});
-    m_process.waitForStarted(2000);
+    m_process->start(m_executablePath, {});
+    m_process->waitForStarted(2000);
 }
 
 void SunshineController::stop()
@@ -187,9 +234,9 @@ void SunshineController::stop()
         return;
     }
 
-    m_process.terminate();
-    if (!m_process.waitForFinished(3000)) {
-        m_process.kill();
+    m_process->terminate();
+    if (!m_process->waitForFinished(3000)) {
+        m_process->kill();
     }
 }
 
@@ -239,7 +286,7 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
     m_pairingInProgress = true;
     Q_EMIT pairingInProgressChanged();
 
-    QNetworkReply *reply = m_network.post(request, QJsonDocument(body).toJson());
+    QNetworkReply *reply = m_network->post(request, QJsonDocument(body).toJson());
     connect(reply, &QNetworkReply::sslErrors, reply, [reply, pinnedFingerprint](const QList<QSslError> &) {
         if (SunshineIdentity::matchesPinnedFingerprint(reply->sslConfiguration().peerCertificate(), pinnedFingerprint)) {
             reply->ignoreSslErrors();
@@ -257,16 +304,16 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
             return;
         }
 
-        const auto document = QJsonDocument::fromJson(reply->readAll());
-        if (!document.isObject()) {
-            Q_EMIT pairingFailed(QStringLiteral("Unexpected response from Sunshine"));
-            return;
-        }
-
-        if (document.object().value(QStringLiteral("status")).toBool()) {
+        switch (SunshinePairingResponse::parse(reply->readAll())) {
+        case SunshinePairingResponse::Result::Success:
             Q_EMIT pairingSucceeded();
-        } else {
+            break;
+        case SunshinePairingResponse::Result::Rejected:
             Q_EMIT pairingFailed(QStringLiteral("Sunshine rejected the PIN"));
+            break;
+        case SunshinePairingResponse::Result::Malformed:
+            Q_EMIT pairingFailed(QStringLiteral("Unexpected response from Sunshine"));
+            break;
         }
     });
 }
@@ -279,15 +326,6 @@ void SunshineController::setState(State newState)
 
     m_state = newState;
     Q_EMIT stateChanged();
-}
-
-bool SunshineController::isPortOpen(quint16 port, int timeoutMs) const
-{
-    QTcpSocket socket;
-    socket.connectToHost(QStringLiteral("127.0.0.1"), port);
-    const bool connected = socket.waitForConnected(timeoutMs);
-    socket.abort();
-    return connected;
 }
 
 bool SunshineController::isSunshineAt(quint16 port, int timeoutMs) const
@@ -303,14 +341,10 @@ bool SunshineController::isSunshineAt(quint16 port, int timeoutMs) const
         return false;
     }
 
-    QSslSocket socket;
-    socket.setPeerVerifyMode(QSslSocket::VerifyNone);
-    socket.connectToHostEncrypted(QStringLiteral("127.0.0.1"), port);
-    if (!socket.waitForEncrypted(timeoutMs)) {
+    const QSslCertificate cert = m_networkProbe->peerCertificateAt(port, timeoutMs);
+    if (cert.isNull()) {
         return false;
     }
 
-    const QSslCertificate cert = socket.peerCertificate();
-    socket.abort();
     return SunshineIdentity::matchesPinnedFingerprint(cert, pinnedFingerprint);
 }
