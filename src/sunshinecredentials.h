@@ -16,9 +16,17 @@
  *
  * If Sunshine already had credentials configured by someone else (or an
  * earlier, non-Moonbeam setup) before Moonbeam ever touched it, this is
- * detected by reading Sunshine's own state file rather than guessing, and
- * the one-time existing password is asked for via provideExisting() -
- * after which it's stored in KWallet the same way and never asked again.
+ * detected by reading Sunshine's own state file rather than guessing (see
+ * SunshineCredentialsState - a read/parse failure there is never treated as
+ * "no credentials"), and the one-time existing password is asked for via
+ * provideExisting() - after which it's stored in KWallet the same way and
+ * never asked again.
+ *
+ * ensure() and provideExisting() both take a cross-process QLockFile before
+ * touching the wallet, Sunshine's state, or spawning `sunshine --creds`,
+ * and re-check the wallet immediately after acquiring it - otherwise two
+ * Moonbeam processes could each decide independently that no credentials
+ * exist yet and race to set different ones.
  */
 class SunshineCredentials : public QObject
 {
@@ -67,7 +75,6 @@ private:
     void setState(State newState);
     bool loadFromWallet();
     bool saveToWallet(const QString &user, const QString &password);
-    QString readConfiguredUsername() const;
     QString findSunshineExecutable() const;
     QString generateRandomPassword() const;
 

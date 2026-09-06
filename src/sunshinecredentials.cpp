@@ -1,11 +1,10 @@
 #include "sunshinecredentials.h"
+#include "sunshinecredentialsstate.h"
 
 #include <KWallet>
 
 #include <QDir>
-#include <QFile>
-#include <QJsonDocument>
-#include <QJsonObject>
+#include <QLockFile>
 #include <QProcess>
 #include <QRandomGenerator>
 #include <QStandardPaths>
@@ -15,6 +14,21 @@ namespace
 const QString WalletFolder = QStringLiteral("Moonbeam");
 const QString WalletKey = QStringLiteral("sunshine-webui");
 const QString GeneratedUser = QStringLiteral("moonbeam");
+
+QString sunshineStateFilePath()
+{
+    return QDir::homePath() + QStringLiteral("/.config/sunshine/sunshine_state.json");
+}
+
+// Serializes the whole "figure out/set up Sunshine web UI credentials"
+// sequence across Moonbeam processes (audit.txt S-02): without this, two
+// processes could each decide independently that no credentials exist yet,
+// generate different passwords, both run `sunshine --creds`, and end up
+// with Sunshine's actual password and KWallet's stored copy disagreeing.
+QString credentialsLockPath()
+{
+    return QDir::temp().filePath(QStringLiteral("moonbeam-sunshine-credentials.lock"));
+}
 }
 
 SunshineCredentials::SunshineCredentials(QObject *parent)
@@ -43,23 +57,39 @@ void SunshineCredentials::ensure()
         return;
     }
 
+    QLockFile lockFile(credentialsLockPath());
+    if (!lockFile.tryLock(5000)) {
+        setState(State::Failed);
+        return;
+    }
+
+    // Re-check after acquiring the lock: another Moonbeam process may have
+    // already finished this exact setup while we were waiting for it.
     if (loadFromWallet()) {
         setState(State::Ready);
         return;
     }
 
-    const QString existingUser = readConfiguredUsername();
-    if (!existingUser.isEmpty()) {
+    const auto probe = SunshineCredentialsState::probeConfiguredUsername(sunshineStateFilePath());
+    if (probe.result == SunshineCredentialsState::Result::Indeterminate) {
+        // Could not positively identify a fresh install (unreadable file,
+        // unrecognized format, ...) - never guess "empty" from a read or
+        // parse failure, since that risks overwriting a real password.
+        setState(State::Failed);
+        return;
+    }
+
+    if (probe.result == SunshineCredentialsState::Result::ExistingUser) {
         // Sunshine already has credentials we don't know - set by a human,
         // or an earlier non-Moonbeam setup. Never guess or overwrite these.
-        m_user = existingUser;
+        m_user = probe.username;
         setState(State::NeedsExistingPassword);
         return;
     }
 
-    // Fresh Sunshine with no web UI credentials configured yet - safe to
-    // generate our own and set them via `sunshine --creds`, which works
-    // standalone without Sunshine needing to already be running.
+    // Positively identified as fresh: no web UI credentials configured yet,
+    // safe to generate our own and set them via `sunshine --creds`, which
+    // works standalone without Sunshine needing to already be running.
     const QString sunshineBin = findSunshineExecutable();
     if (sunshineBin.isEmpty()) {
         setState(State::Failed);
@@ -91,6 +121,12 @@ void SunshineCredentials::ensure()
 void SunshineCredentials::provideExisting(const QString &password)
 {
     if (m_state != State::NeedsExistingPassword || m_user.isEmpty()) {
+        return;
+    }
+
+    QLockFile lockFile(credentialsLockPath());
+    if (!lockFile.tryLock(5000)) {
+        setState(State::Failed);
         return;
     }
 
@@ -149,21 +185,6 @@ bool SunshineCredentials::saveToWallet(const QString &user, const QString &passw
     map[QStringLiteral("user")] = user;
     map[QStringLiteral("password")] = password;
     return wallet->writeMap(WalletKey, map) == 0;
-}
-
-QString SunshineCredentials::readConfiguredUsername() const
-{
-    QFile file(QDir::homePath() + QStringLiteral("/.config/sunshine/sunshine_state.json"));
-    if (!file.open(QIODevice::ReadOnly)) {
-        return {};
-    }
-
-    const auto document = QJsonDocument::fromJson(file.readAll());
-    if (!document.isObject()) {
-        return {};
-    }
-
-    return document.object().value(QStringLiteral("username")).toString();
 }
 
 QString SunshineCredentials::findSunshineExecutable() const
