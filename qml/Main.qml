@@ -1,6 +1,5 @@
 import QtQuick
 import org.kde.kirigami as Kirigami
-import org.kde.coreaddons as CoreAddons
 import org.agundur.moonbeam
 
 Kirigami.ApplicationWindow {
@@ -24,7 +23,7 @@ Kirigami.ApplicationWindow {
             Kirigami.Action {
                 text: i18n("About Moonbeam")
                 icon.name: "help-about"
-                onTriggered: root.pageStack.layers.push(aboutPageComponent)
+                onTriggered: root.pageStack.layers.push(Qt.resolvedUrl("pages/AboutPage.qml"))
             },
             Kirigami.Action {
                 text: i18n("Quit")
@@ -44,17 +43,11 @@ Kirigami.ApplicationWindow {
     // layers.push() always covers the full window and gets a proper,
     // reliable back button - the standard Kirigami idiom for an About page.
     //
-    // Pushes the Component, not a static instance: PageRow's goBack() only
-    // decrements currentIndex, it doesn't actually pop the page out of the
-    // stack - so a static, reused Kirigami.AboutPage instance is still
-    // "already in the row" the second time this fires, and push() silently
-    // no-ops rather than reopening it. A Component gives every open a
-    // fresh instance (destroyed again when the layer is popped).
-    Component {
-        id: aboutPageComponent
-
-        Kirigami.AboutPage {
-            aboutData: CoreAddons.AboutData
-        }
-    }
+    // Pushed by URL, not a static instance or Component id: PageRow's
+    // goBack() only decrements currentIndex, it doesn't actually pop the
+    // page out of the stack - so a static, reused page instance would
+    // still be "already in the row" the second time this fires, and
+    // push() would silently no-op instead of reopening it. Pushing by URL
+    // (like PairingPage.qml already does on the main pageStack) creates a
+    // fresh instance every time.
 }

@@ -21,9 +21,22 @@ int main(int argc, char *argv[])
                           KAboutLicense::GPL_V3,
                           i18n("(c) 2026 Agundur"));
     aboutData.setHomepage(QStringLiteral("https://github.com/Agundur-KDE/Moonbeam"));
-    aboutData.setUrl(KAboutData::UrlType::Bugtracker, QStringLiteral("https://github.com/Agundur-KDE/Moonbeam/issues"));
-    aboutData.setUrl(KAboutData::UrlType::Donation, QStringLiteral("https://github.com/sponsors/Agundur-KDE"));
-    aboutData.setUrl(KAboutData::UrlType::Contribute, QStringLiteral("https://github.com/Agundur-KDE/Moonbeam/discussions"));
+    // KAboutData's two-argument-name constructor defaults desktopFileName to
+    // "org.kde." + componentName and organizationDomain to "kde.org" -
+    // correct for an actual KDE project, wrong for a third-party app like
+    // this one (KAboutData's own header docs say as much: "Make sure to
+    // call setOrganizationDomain() if your product is not developed inside
+    // the KDE community"). Left uncorrected, this silently made Kirigami's
+    // stock AboutPage redirect "Donate"/"Get Involved" to KDE's own
+    // community pages instead of anything this app configured - see
+    // qml/pages/AboutPage.qml for why the About page was rebuilt as a
+    // custom page instead of fighting that (and Kirigami's own
+    // "Report a bug" logic, which unconditionally opens bugs.kde.org
+    // regardless of bugAddress). Kept here anyway since desktopFileName/
+    // organizationDomain also affect real things beyond that one page
+    // (D-Bus registration name, etc).
+    aboutData.setDesktopFileName(QStringLiteral("org.agundur.moonbeam"));
+    aboutData.setOrganizationDomain(QByteArrayLiteral("agundur.de"));
     KAboutData::setApplicationData(aboutData);
     app.setWindowIcon(QIcon::fromTheme(QStringLiteral("org.agundur.moonbeam")));
 
