@@ -52,12 +52,16 @@ Kirigami.ScrollablePage {
             text: i18n("Sunshine's web UI already has a password set for user \"%1\". Enter it once so Moonbeam can remember it securely.", root.credentials.user)
         }
 
-        Controls.TextField {
-            id: existingPasswordField
+        Kirigami.FormLayout {
             Layout.fillWidth: true
-            visible: root.credentials.state === SunshineCredentials.NeedsExistingPassword
-            placeholderText: i18n("Existing Sunshine web UI password")
-            echoMode: TextInput.Password
+
+            Controls.TextField {
+                id: existingPasswordField
+                Kirigami.FormData.label: i18n("Existing password:")
+                visible: root.credentials.state === SunshineCredentials.NeedsExistingPassword
+                placeholderText: i18n("Existing Sunshine web UI password")
+                echoMode: TextInput.Password
+            }
         }
 
         Controls.Button {
@@ -84,19 +88,23 @@ Kirigami.ScrollablePage {
             visible: false
         }
 
-        Controls.TextField {
-            id: pinField
+        Kirigami.FormLayout {
             Layout.fillWidth: true
-            placeholderText: i18n("PIN from Moonlight")
-            enabled: !root.sunshine.pairingInProgress
-            validator: IntValidator { bottom: 0; top: 9999 }
-        }
 
-        Controls.TextField {
-            id: nameField
-            Layout.fillWidth: true
-            placeholderText: i18n("Device name (optional)")
-            enabled: !root.sunshine.pairingInProgress
+            Controls.TextField {
+                id: pinField
+                Kirigami.FormData.label: i18n("PIN:")
+                placeholderText: i18n("PIN from Moonlight")
+                enabled: !root.sunshine.pairingInProgress
+                validator: IntValidator { bottom: 0; top: 9999 }
+            }
+
+            Controls.TextField {
+                id: nameField
+                Kirigami.FormData.label: i18n("Device name:")
+                placeholderText: i18n("Device name (optional)")
+                enabled: !root.sunshine.pairingInProgress
+            }
         }
 
         Controls.Button {

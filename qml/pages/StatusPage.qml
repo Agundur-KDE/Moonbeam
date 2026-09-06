@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
 import org.kde.kirigami as Kirigami
-import org.kde.coreaddons as CoreAddons
 import org.agundur.moonbeam
 
 Kirigami.ScrollablePage {
@@ -29,20 +28,6 @@ Kirigami.ScrollablePage {
         default:
             return "video-display-off";
         }
-    }
-
-    actions: [
-        Kirigami.Action {
-            text: i18n("About Moonbeam")
-            icon.name: "help-about"
-            onTriggered: applicationWindow().pageStack.push(aboutPage)
-        }
-    ]
-
-    Kirigami.AboutPage {
-        id: aboutPage
-        visible: false
-        aboutData: CoreAddons.AboutData
     }
 
     Kirigami.Dialog {
@@ -97,7 +82,9 @@ Kirigami.ScrollablePage {
         }
 
         Kirigami.Heading {
-            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: true
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
             text: root.sunshine.statusText
             level: 2
         }
@@ -142,38 +129,64 @@ Kirigami.ScrollablePage {
             text: i18n("Anyone who pairs a device gets full mouse, keyboard, and controller control of this PC - not just a screen view.")
         }
 
+        // Plain QQC2 CheckBox never wraps its label - it just grows past
+        // the window edge and gets clipped by the window itself once a
+        // translation (Russian, French, ...) runs longer than English.
+        // The contentItem override below is the standard QQC2 idiom for a
+        // wrapping checkbox label.
         Controls.CheckBox {
-            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: true
             text: i18n("View only (no mouse/keyboard/controller control)")
             checked: root.sunshine.viewOnly
             enabled: root.sunshine.canStart
             onToggled: root.sunshine.viewOnly = checked
+
+            contentItem: Controls.Label {
+                text: parent.text
+                wrapMode: Text.WordWrap
+                verticalAlignment: Text.AlignVCenter
+                leftPadding: parent.indicator.width + parent.spacing
+            }
         }
 
         RowLayout {
-            Layout.alignment: Qt.AlignHCenter
+            Layout.fillWidth: true
 
             Controls.CheckBox {
+                Layout.fillWidth: true
                 text: i18n("Surround audio (5.1/7.1)")
                 checked: root.sunshine.surroundAudio
                 enabled: root.sunshine.canStart
                 onToggled: root.sunshine.surroundAudio = checked
+
+                contentItem: Controls.Label {
+                    text: parent.text
+                    wrapMode: Text.WordWrap
+                    verticalAlignment: Text.AlignVCenter
+                    leftPadding: parent.indicator.width + parent.spacing
+                }
             }
 
-            Controls.ToolButton {
-                text: "?"
+            // ContextualHelpButton keeps the existing detailed Dialog (its
+            // own onClicked handler runs alongside the component's built-in
+            // tooltip toggle) while matching KDE's usual contextual-help
+            // affordance instead of an ad-hoc "?" label.
+            Kirigami.ContextualHelpButton {
+                toolTipText: i18n("What do I need to set up first?")
                 onClicked: surroundAudioHelp.open()
-
-                Controls.ToolTip.visible: hovered
-                Controls.ToolTip.text: i18n("What do I need to set up first?")
             }
         }
 
-        RowLayout {
+        // Equal-width, capped-width buttons in a column read calmer and
+        // more predictably in this narrow window than a row that has to
+        // either overflow or wrap once a translation runs long.
+        ColumnLayout {
             Layout.alignment: Qt.AlignHCenter
-            spacing: Kirigami.Units.largeSpacing
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 18
+            spacing: Kirigami.Units.smallSpacing
 
             Controls.Button {
+                Layout.fillWidth: true
                 text: root.sunshine.canStop ? i18n("Stop Sharing") : i18n("Start Sharing")
                 icon.name: root.sunshine.canStop ? "media-playback-stop" : "media-playback-start"
                 enabled: root.sunshine.canStart || root.sunshine.canStop
@@ -181,6 +194,7 @@ Kirigami.ScrollablePage {
             }
 
             Controls.Button {
+                Layout.fillWidth: true
                 text: i18n("Pair a Device")
                 icon.name: "network-connect"
                 enabled: root.isSharing
@@ -188,6 +202,7 @@ Kirigami.ScrollablePage {
             }
 
             Controls.Button {
+                Layout.fillWidth: true
                 text: i18n("Open Web UI")
                 icon.name: "internet-web-browser"
                 enabled: root.isSharing
