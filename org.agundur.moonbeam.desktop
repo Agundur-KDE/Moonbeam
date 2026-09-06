@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=Moonbeam
-Comment=Share your desktop or cast media over the network
+Comment=Share your desktop over the network via Sunshine/Moonlight
 Exec=moonbeam
 Icon=org.agundur.moonbeam
 Terminal=false

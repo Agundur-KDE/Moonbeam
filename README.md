@@ -107,7 +107,7 @@ why a Kirigami app was chosen over plain Qt).
 ## Build
 
 Requires Qt6, Extra CMake Modules (ECM), and KF6 (CoreAddons, I18n, Kirigami,
-Config, Notifications).
+Config, Notifications, Wallet).
 
 ```sh
 cmake -B build -S .
