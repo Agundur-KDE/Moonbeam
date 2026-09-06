@@ -149,3 +149,23 @@ msgstr "Sunshine rechazó el PIN"
 
 msgid "Unexpected response from Sunshine"
 msgstr "Respuesta inesperada de Sunshine"
+msgid "Moonbeam 0.1.0"
+msgstr "Moonbeam 0.1.0"
+
+msgid "© 2026 Agundur — GPL v3"
+msgstr "© 2026 Agundur — GPL v3"
+
+msgid "Homepage"
+msgstr "Página de inicio"
+
+msgid "Donate"
+msgstr "Donar"
+
+msgid "Get Involved"
+msgstr "Participar"
+
+msgid "Report a Bug"
+msgstr "Informar de un error"
+
+msgid "Contact"
+msgstr "Contacto"

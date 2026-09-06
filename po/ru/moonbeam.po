@@ -149,3 +149,23 @@ msgstr "Sunshine отклонил PIN-код"
 
 msgid "Unexpected response from Sunshine"
 msgstr "Неожиданный ответ от Sunshine"
+msgid "Moonbeam 0.1.0"
+msgstr "Moonbeam 0.1.0"
+
+msgid "© 2026 Agundur — GPL v3"
+msgstr "© 2026 Agundur — GPL v3"
+
+msgid "Homepage"
+msgstr "Домашняя страница"
+
+msgid "Donate"
+msgstr "Пожертвовать"
+
+msgid "Get Involved"
+msgstr "Принять участие"
+
+msgid "Report a Bug"
+msgstr "Сообщить об ошибке"
+
+msgid "Contact"
+msgstr "Контакты"
