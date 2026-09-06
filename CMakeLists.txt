@@ -40,6 +40,8 @@ qt_add_qml_module(moonbeam
         src/sunshinecontroller.cpp
         src/sunshinecredentials.h
         src/sunshinecredentials.cpp
+        src/sunshineidentity.h
+        src/sunshineidentity.cpp
 )
 
 target_include_directories(moonbeam PRIVATE src)
@@ -60,6 +62,31 @@ target_link_libraries(moonbeam PRIVATE
     KF6::Notifications
     KF6::Wallet
 )
+
+enable_testing()
+find_package(Qt6 REQUIRED COMPONENTS Test)
+
+add_executable(sunshineidentitytest
+    tests/sunshineidentitytest.cpp
+    src/sunshineidentity.cpp
+)
+target_include_directories(sunshineidentitytest PRIVATE src)
+target_compile_definitions(sunshineidentitytest PRIVATE
+    MOONBEAM_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures"
+)
+target_link_libraries(sunshineidentitytest PRIVATE Qt6::Test Qt6::Network)
+add_test(NAME sunshineidentitytest COMMAND sunshineidentitytest)
+
+add_executable(sunshinepinningtest
+    tests/sunshinepinningtest.cpp
+    src/sunshineidentity.cpp
+)
+target_include_directories(sunshinepinningtest PRIVATE src)
+target_compile_definitions(sunshinepinningtest PRIVATE
+    MOONBEAM_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures"
+)
+target_link_libraries(sunshinepinningtest PRIVATE Qt6::Test Qt6::Network)
+add_test(NAME sunshinepinningtest COMMAND sunshinepinningtest)
 
 install(TARGETS moonbeam ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
 install(PROGRAMS org.agundur.moonbeam.desktop DESTINATION ${KDE_INSTALL_APPDIR})

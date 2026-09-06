@@ -1,4 +1,5 @@
 #include "sunshinecontroller.h"
+#include "sunshineidentity.h"
 
 #include <QDir>
 #include <QFile>
@@ -17,12 +18,6 @@
 
 namespace
 {
-// Sunshine's own server certificate CN, set in httpcommon.cpp
-// (crypto::gen_creds("Sunshine Gamestream Host", ...)). Used to confirm
-// that whatever is listening on the expected port is actually Sunshine,
-// not some other local process that happens to have grabbed the port.
-const QString SunshineCertCommonName = QStringLiteral("Sunshine Gamestream Host");
-
 // Sunshine derives its web UI port as (configured base `port`, default
 // 47989) + 1 (confighttp::PORT_HTTPS offset), see config.cpp. Reading the
 // actual config avoids treating a custom-port Sunshine as "not running"
@@ -86,20 +81,34 @@ bool SunshineController::pairingInProgress() const
     return m_pairingInProgress;
 }
 
+QString SunshineController::sunshineConfigDir() const
+{
+    return QDir::homePath() + QStringLiteral("/.config/sunshine");
+}
+
+QString SunshineController::sunshineConfigContents() const
+{
+    QFile file(sunshineConfigDir() + QStringLiteral("/sunshine.conf"));
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        return {};
+    }
+    return QString::fromUtf8(file.readAll());
+}
+
+QByteArray SunshineController::pinnedCertificateFingerprint() const
+{
+    const QString certPath = SunshineIdentity::certificatePath(sunshineConfigDir(), sunshineConfigContents());
+    return SunshineIdentity::certificateFingerprint(certPath);
+}
+
 quint16 SunshineController::resolveWebUiPort() const
 {
-    const QString configPath = QDir::homePath() + QStringLiteral("/.config/sunshine/sunshine.conf");
-    QFile file(configPath);
     quint16 basePort = defaultBasePort();
 
-    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        static const QRegularExpression portLine(QStringLiteral("^\\s*port\\s*=\\s*(\\d+)\\s*$"));
-        while (!file.atEnd()) {
-            const auto match = portLine.match(QString::fromUtf8(file.readLine()));
-            if (match.hasMatch()) {
-                basePort = static_cast<quint16>(match.captured(1).toUInt());
-            }
-        }
+    static const QRegularExpression portLine(QStringLiteral("^\\s*port\\s*=\\s*(\\d+)\\s*$"), QRegularExpression::MultilineOption);
+    auto it = portLine.globalMatch(sunshineConfigContents());
+    while (it.hasNext()) {
+        basePort = static_cast<quint16>(it.next().captured(1).toUInt());
     }
 
     return basePort + 1;
@@ -168,8 +177,9 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
 
     const quint16 webUiPort = resolveWebUiPort();
 
-    if (!isSunshineAt(webUiPort)) {
-        Q_EMIT pairingFailed(QStringLiteral("Could not verify a Sunshine instance on port %1 - refusing to send credentials").arg(webUiPort));
+    const QByteArray pinnedFingerprint = pinnedCertificateFingerprint();
+    if (pinnedFingerprint.isEmpty()) {
+        Q_EMIT pairingFailed(QStringLiteral("Could not determine Sunshine's certificate - refusing to send credentials"));
         return;
     }
 
@@ -179,9 +189,15 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
     const QByteArray credentials = (webUiUser + QStringLiteral(":") + webUiPassword).toUtf8().toBase64();
     request.setRawHeader("Authorization", "Basic " + credentials);
 
-    // Sunshine's cert is self-signed; we already verified its CN above, so
-    // this isn't blind trust - just skipping the CA-chain check that a
-    // self-signed cert could never pass anyway.
+    // Sunshine's cert is self-signed, so the CA-chain check below is
+    // expected to fail - that alone is not a reason to reject it. What
+    // actually decides trust is the sslErrors handler below, which pins
+    // the exact certificate fingerprint (see SunshineIdentity) and only
+    // proceeds - meaning only then does the Authorization header above
+    // actually get sent - when that fingerprint matches. This also closes
+    // the TOCTOU a separate isSunshineAt() probe-then-connect would leave
+    // open: verification happens on this exact TLS connection, not a
+    // previous one that something could have swapped out afterward.
     QSslConfiguration sslConfig = request.sslConfiguration();
     sslConfig.setPeerVerifyMode(QSslSocket::VerifyNone);
     request.setSslConfiguration(sslConfig);
@@ -196,8 +212,12 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
     Q_EMIT pairingInProgressChanged();
 
     QNetworkReply *reply = m_network.post(request, QJsonDocument(body).toJson());
-    connect(reply, &QNetworkReply::sslErrors, reply, [reply](const QList<QSslError> &) {
-        reply->ignoreSslErrors();
+    connect(reply, &QNetworkReply::sslErrors, reply, [reply, pinnedFingerprint](const QList<QSslError> &) {
+        if (SunshineIdentity::matchesPinnedFingerprint(reply->sslConfiguration().peerCertificate(), pinnedFingerprint)) {
+            reply->ignoreSslErrors();
+        } else {
+            reply->abort();
+        }
     });
     connect(reply, &QNetworkReply::finished, this, [this, reply] {
         reply->deleteLater();
@@ -244,6 +264,17 @@ bool SunshineController::isPortOpen(quint16 port, int timeoutMs) const
 
 bool SunshineController::isSunshineAt(quint16 port, int timeoutMs) const
 {
+    // Pins the exact certificate Sunshine is configured to serve (read from
+    // its own config, see SunshineIdentity) rather than checking the
+    // certificate's CN: a CN is just a string inside a self-signed
+    // certificate, and any local process can put the same one in a
+    // certificate of its own (see audit.txt S-01). An unresolvable pin
+    // (config/cert unreadable) means "cannot verify" and fails closed.
+    const QByteArray pinnedFingerprint = pinnedCertificateFingerprint();
+    if (pinnedFingerprint.isEmpty()) {
+        return false;
+    }
+
     QSslSocket socket;
     socket.setPeerVerifyMode(QSslSocket::VerifyNone);
     socket.connectToHostEncrypted(QStringLiteral("127.0.0.1"), port);
@@ -253,5 +284,5 @@ bool SunshineController::isSunshineAt(quint16 port, int timeoutMs) const
 
     const QSslCertificate cert = socket.peerCertificate();
     socket.abort();
-    return cert.subjectInfo(QSslCertificate::CommonName).contains(SunshineCertCommonName);
+    return SunshineIdentity::matchesPinnedFingerprint(cert, pinnedFingerprint);
 }

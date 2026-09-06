@@ -103,6 +103,9 @@ private:
     bool isPortOpen(quint16 port, int timeoutMs = 300) const;
     bool isSunshineAt(quint16 port, int timeoutMs = 500) const;
     quint16 resolveWebUiPort() const;
+    QString sunshineConfigDir() const;
+    QString sunshineConfigContents() const;
+    QByteArray pinnedCertificateFingerprint() const;
 
     QProcess m_process;
     QNetworkAccessManager m_network;
