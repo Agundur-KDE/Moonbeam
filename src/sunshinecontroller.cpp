@@ -5,6 +5,8 @@
 #include "sunshineportconfig.h"
 #include "sunshineremotecontrolconfig.h"
 
+#include <KLocalizedString>
+
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
@@ -87,17 +89,17 @@ QString SunshineController::statusText() const
 {
     switch (m_state) {
     case State::Checking:
-        return QStringLiteral("Checking Sunshine…");
+        return i18n("Checking Sunshine…");
     case State::NotInstalled:
-        return QStringLiteral("Sunshine not found — install it first");
+        return i18n("Sunshine not found — install it first");
     case State::ConfigInvalid:
-        return QStringLiteral("Sunshine's configured port is invalid — check sunshine.conf");
+        return i18n("Sunshine's configured port is invalid — check sunshine.conf");
     case State::Stopped:
-        return QStringLiteral("Not sharing");
+        return i18n("Not sharing");
     case State::RunningExternal:
-        return QStringLiteral("Sharing desktop (using an already-running Sunshine)");
+        return i18n("Sharing desktop (using an already-running Sunshine)");
     case State::RunningOwned:
-        return QStringLiteral("Sharing desktop");
+        return i18n("Sharing desktop");
     }
     return {};
 }
@@ -278,13 +280,13 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
 
     const auto webUiPort = resolveWebUiPort();
     if (!webUiPort.has_value()) {
-        Q_EMIT pairingFailed(QStringLiteral("Sunshine's configured port is invalid - check sunshine.conf"));
+        Q_EMIT pairingFailed(i18n("Sunshine's configured port is invalid - check sunshine.conf"));
         return;
     }
 
     const QByteArray pinnedFingerprint = pinnedCertificateFingerprint();
     if (pinnedFingerprint.isEmpty()) {
-        Q_EMIT pairingFailed(QStringLiteral("Could not determine Sunshine's certificate - refusing to send credentials"));
+        Q_EMIT pairingFailed(i18n("Could not determine Sunshine's certificate - refusing to send credentials"));
         return;
     }
 
@@ -339,10 +341,10 @@ void SunshineController::pair(const QString &pin, const QString &deviceName, con
             Q_EMIT pairingSucceeded();
             break;
         case SunshinePairingResponse::Result::Rejected:
-            Q_EMIT pairingFailed(QStringLiteral("Sunshine rejected the PIN"));
+            Q_EMIT pairingFailed(i18n("Sunshine rejected the PIN"));
             break;
         case SunshinePairingResponse::Result::Malformed:
-            Q_EMIT pairingFailed(QStringLiteral("Unexpected response from Sunshine"));
+            Q_EMIT pairingFailed(i18n("Unexpected response from Sunshine"));
             break;
         }
     });

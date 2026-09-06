@@ -1,0 +1,151 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: moonbeam\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2026-09-06 10:06+0000\n"
+"PO-Revision-Date: 2026-09-06 10:06+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: Spanish <kde-l10n-es@kde.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Pair a Device"
+msgstr "Emparejar un dispositivo"
+
+msgid "Paired! The device should now be able to stream."
+msgstr "¡Emparejado! El dispositivo ya debería poder transmitir."
+
+msgid "Pairing failed: %1"
+msgstr "Error al emparejar: %1"
+
+msgid "Open Moonlight on the device you want to connect, add this PC, then enter the PIN it shows you below."
+msgstr "Abre Moonlight en el dispositivo que quieres conectar, añade este PC y luego introduce el PIN que te muestra a continuación."
+
+msgid "Sunshine's web UI already has a password set for user \"%1\". Enter it once so Moonbeam can remember it securely."
+msgstr "La interfaz web de Sunshine ya tiene una contraseña establecida para el usuario «%1». Introdúcela una vez para que Moonbeam pueda recordarla de forma segura."
+
+msgid "Existing Sunshine web UI password"
+msgstr "Contraseña existente de la interfaz web de Sunshine"
+
+msgid "Remember Password"
+msgstr "Recordar contraseña"
+
+msgid "Could not set up Sunshine credentials automatically."
+msgstr "No se pudieron configurar automáticamente las credenciales de Sunshine."
+
+msgid "PIN from Moonlight"
+msgstr "PIN de Moonlight"
+
+msgid "Device name (optional)"
+msgstr "Nombre del dispositivo (opcional)"
+
+msgid "Pairing…"
+msgstr "Emparejando…"
+
+msgid "Pair"
+msgstr "Emparejar"
+
+msgid "Unnamed device"
+msgstr "Dispositivo sin nombre"
+
+msgid "Share Desktop"
+msgstr "Compartir escritorio"
+
+msgid "About Moonbeam"
+msgstr "Acerca de Moonbeam"
+
+msgid "Surround Audio Setup"
+msgstr "Configuración de audio envolvente"
+
+msgid "This only tells Sunshine to use a multichannel audio device named \"moonbeam-surround\" - it doesn't create that device. Before enabling this, create a matching PipeWire sink yourself, e.g. for 5.1:"
+msgstr "Esto solo le indica a Sunshine que use un dispositivo de audio multicanal llamado «moonbeam-surround» - no crea ese dispositivo. Antes de activar esto, crea tú mismo un sink de PipeWire adecuado, por ejemplo para 5.1:"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "You'll also need to select 5.1/7.1 audio in the Moonlight client's own settings - that's a separate, per-device setting Moonbeam doesn't control."
+msgstr "También tendrás que seleccionar el audio 5.1/7.1 en los propios ajustes del cliente Moonlight - es un ajuste independiente, específico de cada dispositivo, que Moonbeam no controla."
+
+msgid "Sunshine isn't installed. Install it with your package manager, e.g. `sudo zypper install sunshine` on openSUSE."
+msgstr "Sunshine no está instalado. Instálalo con tu gestor de paquetes, por ejemplo «sudo zypper install sunshine» en openSUSE."
+
+msgid "Sunshine's configured port in sunshine.conf is invalid, so Moonbeam can't safely check or start it. Fix the `port` value there first."
+msgstr "El puerto configurado de Sunshine en sunshine.conf no es válido, por lo que Moonbeam no puede comprobarlo ni iniciarlo con seguridad. Corrige primero el valor de «port» ahí."
+
+msgid "An existing Sunshine instance is already running - Moonbeam is using it, not starting a second one."
+msgstr "Ya hay una instancia de Sunshine en ejecución - Moonbeam la está usando, sin iniciar una segunda."
+
+msgid "Connect from Moonlight on your TV, tablet, or phone. First time on a new device? You'll need a pairing PIN."
+msgstr "Conéctate desde Moonlight en tu televisor, tableta o teléfono. ¿Primera vez en un dispositivo nuevo? Necesitarás un PIN de emparejamiento."
+
+msgid "Anyone who pairs a device gets full mouse, keyboard, and controller control of this PC - not just a screen view."
+msgstr "Cualquiera que empareje un dispositivo obtiene control total del ratón, teclado y mando de este PC - no solo una vista de la pantalla."
+
+msgid "View only (no mouse/keyboard/controller control)"
+msgstr "Solo ver (sin control de ratón/teclado/mando)"
+
+msgid "Surround audio (5.1/7.1)"
+msgstr "Audio envolvente (5.1/7.1)"
+
+msgid "What do I need to set up first?"
+msgstr "¿Qué necesito configurar antes?"
+
+msgid "Stop Sharing"
+msgstr "Detener el uso compartido"
+
+msgid "Start Sharing"
+msgstr "Iniciar el uso compartido"
+
+msgid "Open Web UI"
+msgstr "Abrir interfaz web"
+
+msgid "Web UI Login"
+msgstr "Inicio de sesión de la interfaz web"
+
+msgid "Username:"
+msgstr "Usuario:"
+
+msgid "Password:"
+msgstr "Contraseña:"
+
+msgid "Moonbeam"
+msgstr "Moonbeam"
+
+msgid "Share your desktop over the network via Sunshine/Moonlight"
+msgstr "Comparte tu escritorio en la red mediante Sunshine/Moonlight"
+
+msgid "(c) 2026 Agundur"
+msgstr "© 2026 Agundur"
+
+msgid "Checking Sunshine…"
+msgstr "Comprobando Sunshine…"
+
+msgid "Sunshine not found — install it first"
+msgstr "Sunshine no encontrado — instálalo primero"
+
+msgid "Sunshine's configured port is invalid — check sunshine.conf"
+msgstr "El puerto configurado de Sunshine no es válido — revisa sunshine.conf"
+
+msgid "Not sharing"
+msgstr "Sin compartir"
+
+msgid "Sharing desktop (using an already-running Sunshine)"
+msgstr "Compartiendo escritorio (usando un Sunshine ya en ejecución)"
+
+msgid "Sharing desktop"
+msgstr "Compartiendo escritorio"
+
+msgid "Sunshine's configured port is invalid - check sunshine.conf"
+msgstr "El puerto configurado de Sunshine no es válido - revisa sunshine.conf"
+
+msgid "Could not determine Sunshine's certificate - refusing to send credentials"
+msgstr "No se pudo determinar el certificado de Sunshine - no se enviarán las credenciales"
+
+msgid "Sunshine rejected the PIN"
+msgstr "Sunshine rechazó el PIN"
+
+msgid "Unexpected response from Sunshine"
+msgstr "Respuesta inesperada de Sunshine"

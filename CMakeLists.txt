@@ -24,6 +24,11 @@ find_package(KF6 REQUIRED COMPONENTS
     Wallet
 )
 
+# Compiles po/<lang>/moonbeam.po into .mo catalogs and installs them where
+# KLocalizedString::setApplicationDomain("moonbeam") (see main.cpp) expects
+# to find them at runtime.
+ki18n_install(po)
+
 qt_add_executable(moonbeam
     src/main.cpp
 )
@@ -162,7 +167,7 @@ target_include_directories(sunshinecontrollertest PRIVATE src tests)
 target_compile_definitions(sunshinecontrollertest PRIVATE
     MOONBEAM_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures"
 )
-target_link_libraries(sunshinecontrollertest PRIVATE Qt6::Test Qt6::Network Qt6::Qml)
+target_link_libraries(sunshinecontrollertest PRIVATE Qt6::Test Qt6::Network Qt6::Qml KF6::I18n)
 add_test(NAME sunshinecontrollertest COMMAND sunshinecontrollertest)
 
 add_executable(sunshinecredentialstest

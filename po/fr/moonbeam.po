@@ -1,0 +1,151 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: moonbeam\n"
+"Report-Msgid-Bugs-To: https://bugs.kde.org\n"
+"POT-Creation-Date: 2026-09-06 10:06+0000\n"
+"PO-Revision-Date: 2026-09-06 10:06+0000\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: French <kde-francophone@kde.org>\n"
+"Language: fr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Pair a Device"
+msgstr "Associer un appareil"
+
+msgid "Paired! The device should now be able to stream."
+msgstr "Associé ! L'appareil devrait maintenant pouvoir diffuser."
+
+msgid "Pairing failed: %1"
+msgstr "Échec de l'association : %1"
+
+msgid "Open Moonlight on the device you want to connect, add this PC, then enter the PIN it shows you below."
+msgstr "Ouvrez Moonlight sur l'appareil que vous souhaitez connecter, ajoutez ce PC, puis saisissez le code PIN affiché ci-dessous."
+
+msgid "Sunshine's web UI already has a password set for user \"%1\". Enter it once so Moonbeam can remember it securely."
+msgstr "L'interface web de Sunshine a déjà un mot de passe défini pour l'utilisateur « %1 ». Saisissez-le une fois pour que Moonbeam puisse le mémoriser en toute sécurité."
+
+msgid "Existing Sunshine web UI password"
+msgstr "Mot de passe existant de l'interface web Sunshine"
+
+msgid "Remember Password"
+msgstr "Mémoriser le mot de passe"
+
+msgid "Could not set up Sunshine credentials automatically."
+msgstr "Impossible de configurer automatiquement les identifiants Sunshine."
+
+msgid "PIN from Moonlight"
+msgstr "Code PIN de Moonlight"
+
+msgid "Device name (optional)"
+msgstr "Nom de l'appareil (facultatif)"
+
+msgid "Pairing…"
+msgstr "Association…"
+
+msgid "Pair"
+msgstr "Associer"
+
+msgid "Unnamed device"
+msgstr "Appareil sans nom"
+
+msgid "Share Desktop"
+msgstr "Partager le bureau"
+
+msgid "About Moonbeam"
+msgstr "À propos de Moonbeam"
+
+msgid "Surround Audio Setup"
+msgstr "Configuration audio surround"
+
+msgid "This only tells Sunshine to use a multichannel audio device named \"moonbeam-surround\" - it doesn't create that device. Before enabling this, create a matching PipeWire sink yourself, e.g. for 5.1:"
+msgstr "Cela indique seulement à Sunshine d'utiliser un périphérique audio multicanal nommé « moonbeam-surround » - cela ne crée pas ce périphérique. Avant d'activer cette option, créez vous-même un sink PipeWire correspondant, par exemple pour du 5.1 :"
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "You'll also need to select 5.1/7.1 audio in the Moonlight client's own settings - that's a separate, per-device setting Moonbeam doesn't control."
+msgstr "Vous devrez également sélectionner l'audio 5.1/7.1 dans les paramètres propres du client Moonlight - c'est un réglage distinct, propre à chaque appareil, que Moonbeam ne contrôle pas."
+
+msgid "Sunshine isn't installed. Install it with your package manager, e.g. `sudo zypper install sunshine` on openSUSE."
+msgstr "Sunshine n'est pas installé. Installez-le avec votre gestionnaire de paquets, par exemple « sudo zypper install sunshine » sous openSUSE."
+
+msgid "Sunshine's configured port in sunshine.conf is invalid, so Moonbeam can't safely check or start it. Fix the `port` value there first."
+msgstr "Le port configuré de Sunshine dans sunshine.conf est invalide, Moonbeam ne peut donc pas le vérifier ou le démarrer en toute sécurité. Corrigez d'abord la valeur de « port » à cet endroit."
+
+msgid "An existing Sunshine instance is already running - Moonbeam is using it, not starting a second one."
+msgstr "Une instance de Sunshine est déjà en cours d'exécution - Moonbeam l'utilise, sans en démarrer une seconde."
+
+msgid "Connect from Moonlight on your TV, tablet, or phone. First time on a new device? You'll need a pairing PIN."
+msgstr "Connectez-vous depuis Moonlight sur votre télévision, votre tablette ou votre téléphone. Première fois sur un nouvel appareil ? Vous aurez besoin d'un code PIN d'association."
+
+msgid "Anyone who pairs a device gets full mouse, keyboard, and controller control of this PC - not just a screen view."
+msgstr "Toute personne qui associe un appareil obtient le contrôle complet de la souris, du clavier et de la manette de ce PC - pas seulement un affichage de l'écran."
+
+msgid "View only (no mouse/keyboard/controller control)"
+msgstr "Affichage seul (aucun contrôle souris/clavier/manette)"
+
+msgid "Surround audio (5.1/7.1)"
+msgstr "Audio surround (5.1/7.1)"
+
+msgid "What do I need to set up first?"
+msgstr "Que dois-je configurer au préalable ?"
+
+msgid "Stop Sharing"
+msgstr "Arrêter le partage"
+
+msgid "Start Sharing"
+msgstr "Démarrer le partage"
+
+msgid "Open Web UI"
+msgstr "Ouvrir l'interface web"
+
+msgid "Web UI Login"
+msgstr "Connexion à l'interface web"
+
+msgid "Username:"
+msgstr "Nom d'utilisateur :"
+
+msgid "Password:"
+msgstr "Mot de passe :"
+
+msgid "Moonbeam"
+msgstr "Moonbeam"
+
+msgid "Share your desktop over the network via Sunshine/Moonlight"
+msgstr "Partagez votre bureau sur le réseau via Sunshine/Moonlight"
+
+msgid "(c) 2026 Agundur"
+msgstr "© 2026 Agundur"
+
+msgid "Checking Sunshine…"
+msgstr "Vérification de Sunshine…"
+
+msgid "Sunshine not found — install it first"
+msgstr "Sunshine introuvable — installez-le d'abord"
+
+msgid "Sunshine's configured port is invalid — check sunshine.conf"
+msgstr "Le port configuré de Sunshine est invalide — vérifiez sunshine.conf"
+
+msgid "Not sharing"
+msgstr "Aucun partage"
+
+msgid "Sharing desktop (using an already-running Sunshine)"
+msgstr "Partage du bureau (via un Sunshine déjà en cours d'exécution)"
+
+msgid "Sharing desktop"
+msgstr "Partage du bureau"
+
+msgid "Sunshine's configured port is invalid - check sunshine.conf"
+msgstr "Le port configuré de Sunshine est invalide - vérifiez sunshine.conf"
+
+msgid "Could not determine Sunshine's certificate - refusing to send credentials"
+msgstr "Impossible de déterminer le certificat de Sunshine - envoi des identifiants refusé"
+
+msgid "Sunshine rejected the PIN"
+msgstr "Sunshine a rejeté le code PIN"
+
+msgid "Unexpected response from Sunshine"
+msgstr "Réponse inattendue de Sunshine"
