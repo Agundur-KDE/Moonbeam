@@ -1,0 +1,22 @@
+Source: moonbeam
+Section: kde
+Priority: optional
+Maintainer: Agundur <info@agundur.de>
+Build-Depends: debhelper-compat (= 13),
+ cmake, ninja-build, extra-cmake-modules, pkg-kde-tools, gettext, pkg-config,
+ qt6-base-dev, qt6-declarative-dev, qt6-declarative-dev-tools, qt6-base-dev-tools,
+ libkf6coreaddons-dev, libkf6i18n-dev, libkirigami-dev, libkf6config-dev,
+ libkf6notifications-dev, libkf6wallet-dev,
+ appstream
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+Homepage: https://github.com/Agundur-KDE/Moonbeam
+
+Package: moonbeam
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends},
+ qml6-module-qtquick-controls, qml6-module-org-kde-kirigami
+Description: Wireless screen sharing for KDE Plasma via Sunshine/Moonlight
+ Moonbeam manages Sunshine and pairs Moonlight clients with one click,
+ turning KDE Plasma into a wireless presenter for meetings, classrooms,
+ and conference rooms.
