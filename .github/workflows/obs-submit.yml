@@ -75,6 +75,18 @@ jobs:
           sed -i "s/^Version:.*/Version:        ${{ steps.ver.outputs.version }}/" moonbeam.spec
           cat _service
 
+      - name: Track spec/_service (new OBS package has no files yet)
+        # `osc commit` only picks up already-tracked changes — on a package
+        # that was just bootstrapped via `osc meta pkg` (no files ever
+        # committed, as with Moonbeam's first release) it silently reports
+        # "nothing to do" and never uploads spec/_service. `osc add` is a
+        # no-op for files already tracked from a prior run, so safe to run
+        # unconditionally on every release, not just the first.
+        run: |
+          set -euo pipefail
+          cd obs-pkg
+          osc add moonbeam.spec _service
+
       - name: Commit to OBS
         # osc exits non-zero for a genuine no-op commit too (same tag already
         # submitted, needs -f to force an empty commit) — that case is fine to

@@ -1,3 +1,11 @@
+moonbeam (0.1.1-1) unstable; urgency=medium
+
+  * Packaging-only fix: obs-submit.yml now runs `osc add` before commit
+    (freshly-bootstrapped OBS package had no prior files, so `osc commit`
+    silently skipped spec/_service). No functional changes over 0.1.0.
+
+ -- Agundur <info@agundur.de>  Mon, 07 Sep 2026 10:10:00 +0200
+
 moonbeam (0.1.0-1) unstable; urgency=medium
 
   * Initial Debian packaging (OBS RPM + .deb via GitHub Actions).
