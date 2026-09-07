@@ -1,5 +1,5 @@
 Name:           moonbeam
-Version:        0.1.1
+Version:        0.1.2
 Release:        1%{?dist}
 Summary:        Wireless screen sharing for KDE Plasma via Sunshine/Moonlight
 
@@ -76,6 +76,15 @@ fi
 %{_datadir}/locale/*/LC_MESSAGES/moonbeam.mo
 
 %changelog
+* Mon Sep 07 2026 Alec <info@agundur.de> - 0.1.2-1
+- Fixed CMake configure failure on the OBS build root: CMakeLists.txt set
+  QT_DEFAULT_MAJOR_VERSION only after include(KDEInstallDirs), which
+  already needs QT_MAJOR_VERSION to pick KDEInstallDirs6.cmake over the
+  Qt5 variant — it defaulted to Qt5 and failed looking for a qmake5
+  executable that doesn't exist on a Qt6-only system. Now sets
+  QT_MAJOR_VERSION=6 before the include. Verified with a full local build
+  on openSUSE Tumbleweed before re-submitting to OBS.
+
 * Mon Sep 07 2026 Alec <info@agundur.de> - 0.1.1-1
 - Packaging-only fix: obs-submit.yml now runs `osc add` before commit,
   since a freshly-bootstrapped OBS package (no prior files) was silently

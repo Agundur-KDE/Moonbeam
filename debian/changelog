@@ -1,3 +1,11 @@
+moonbeam (0.1.2-1) unstable; urgency=medium
+
+  * Fixed CMake configure failure on Qt6-only build roots: QT_MAJOR_VERSION
+    is now set to 6 before include(KDEInstallDirs), which previously
+    defaulted to the Qt5 variant and failed looking for a qmake5 executable.
+
+ -- Agundur <info@agundur.de>  Mon, 07 Sep 2026 10:20:00 +0200
+
 moonbeam (0.1.1-1) unstable; urgency=medium
 
   * Packaging-only fix: obs-submit.yml now runs `osc add` before commit

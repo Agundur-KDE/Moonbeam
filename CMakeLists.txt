@@ -8,11 +8,18 @@ set(CMAKE_AUTOMOC ON)
 find_package(ECM REQUIRED NO_MODULE)
 list(APPEND CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 
+# KDEInstallDirs.cmake includes KDEInstallDirs${QT_MAJOR_VERSION}.cmake, so
+# this must be set before include(KDEInstallDirs) below — otherwise it
+# defaults to the Qt5 variant, which then fails looking for a qmake5
+# executable that doesn't exist on a Qt6-only system (broke the first OBS
+# build attempt).
+set(QT_MAJOR_VERSION 6)
+set(QT_DEFAULT_MAJOR_VERSION 6)
+
 include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 
-set(QT_DEFAULT_MAJOR_VERSION 6)
 find_package(Qt6 REQUIRED COMPONENTS Core Gui Network Qml Quick QuickControls2)
 qt_standard_project_setup(REQUIRES 6.5)
 find_package(KF6 REQUIRED COMPONENTS
