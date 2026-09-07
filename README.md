@@ -91,6 +91,20 @@ works:
 - [Moonlight](https://moonlight-stream.org/) on whatever device you're
   sharing *to*.
 
+## Install
+
+Grab the package for your distro from the
+[latest release](https://github.com/Agundur-KDE/Moonbeam/releases/latest):
+
+- **openSUSE (Tumbleweed):**
+  `sudo zypper install moonbeam-*.x86_64.rpm`
+- **Debian/Ubuntu (or derivatives):**
+  `sudo apt install ./moonbeam_*_amd64.deb`
+
+No Flatpak yet — Moonbeam manages a host-level Sunshine process and talks
+to KWallet, both awkward to reach cleanly from inside a sandbox. Might
+revisit if there's demand.
+
 ## Security
 
 - Before trusting anything as "your" Sunshine, Moonbeam checks its exact
