@@ -1,5 +1,5 @@
 Name:           moonbeam
-Version:        0.1.2
+Version:        0.1.3
 Release:        1%{?dist}
 Summary:        Wireless screen sharing for KDE Plasma via Sunshine/Moonlight
 
@@ -76,6 +76,19 @@ fi
 %{_datadir}/locale/*/LC_MESSAGES/moonbeam.mo
 
 %changelog
+* Mon Sep 07 2026 Alec <info@agundur.de> - 0.1.3-1
+- Fixed rpmlint hard-fail (badness 10001, build aborted): the .desktop
+  file was installed via install(PROGRAMS ...), setting the executable bit
+  on a non-script file (E: script-without-shebang) — switched to
+  install(FILES ...). The installed binary also carried a $ORIGIN-relative
+  RPATH meant for running out of the build tree (E: binary-or-shlib-
+  defines-rpath) — added set(CMAKE_SKIP_INSTALL_RPATH TRUE). Also escaped
+  a literal "%prep" in the 0.1.0 changelog entry below, which rpmlint's
+  macro scanner flagged (same landmine KCast hit once, see its own
+  changelog history) — not a build blocker this time, fixed proactively.
+  Verified installed file perms (644) and RPATH (empty) locally before
+  re-submitting.
+
 * Mon Sep 07 2026 Alec <info@agundur.de> - 0.1.2-1
 - Fixed CMake configure failure on the OBS build root: CMakeLists.txt set
   QT_DEFAULT_MAJOR_VERSION only after include(KDEInstallDirs), which
@@ -93,4 +106,4 @@ fi
 
 * Mon Sep 07 2026 Alec <info@agundur.de> - 0.1.0-1
 - Initial packaging: RPM build via OBS, mirrors the kfritz/kcast spec
-  pattern (obs_scm _service, source-dir auto-detection in %prep).
+  pattern (obs_scm _service, source-dir auto-detection during prep).

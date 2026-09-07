@@ -5,6 +5,12 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
+# Without this, the installed binary keeps a $ORIGIN-relative RPATH meant
+# for running out of the build tree — fine for a local dev build, but
+# rpmlint hard-blocks it (binary-or-shlib-defines-rpath, badness 10000) on
+# a system package where libraries come from the standard linker path.
+set(CMAKE_SKIP_INSTALL_RPATH TRUE)
+
 find_package(ECM REQUIRED NO_MODULE)
 list(APPEND CMAKE_MODULE_PATH ${ECM_MODULE_PATH})
 
@@ -190,7 +196,7 @@ target_link_libraries(sunshinecredentialstest PRIVATE Qt6::Test Qt6::Gui Qt6::Qm
 add_test(NAME sunshinecredentialstest COMMAND sunshinecredentialstest)
 
 install(TARGETS moonbeam ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})
-install(PROGRAMS org.agundur.moonbeam.desktop DESTINATION ${KDE_INSTALL_APPDIR})
+install(FILES org.agundur.moonbeam.desktop DESTINATION ${KDE_INSTALL_APPDIR})
 install(FILES assets/icons/org.agundur.moonbeam.png
     DESTINATION ${KDE_INSTALL_ICONDIR}/hicolor/512x512/apps
 )
