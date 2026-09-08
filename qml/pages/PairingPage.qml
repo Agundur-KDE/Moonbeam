@@ -58,6 +58,8 @@ Kirigami.ScrollablePage {
             Controls.TextField {
                 id: existingPasswordField
                 Kirigami.FormData.label: i18n("Existing password:")
+                Layout.fillWidth: true
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 20
                 visible: root.credentials.state === SunshineCredentials.NeedsExistingPassword
                 placeholderText: i18n("Existing Sunshine web UI password")
                 echoMode: TextInput.Password
@@ -94,6 +96,8 @@ Kirigami.ScrollablePage {
             Controls.TextField {
                 id: pinField
                 Kirigami.FormData.label: i18n("PIN:")
+                Layout.fillWidth: true
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 20
                 placeholderText: i18n("PIN from Moonlight")
                 enabled: !root.sunshine.pairingInProgress
                 validator: IntValidator { bottom: 0; top: 9999 }
@@ -102,6 +106,8 @@ Kirigami.ScrollablePage {
             Controls.TextField {
                 id: nameField
                 Kirigami.FormData.label: i18n("Device name:")
+                Layout.fillWidth: true
+                Layout.maximumWidth: Kirigami.Units.gridUnit * 20
                 placeholderText: i18n("Device name (optional)")
                 enabled: !root.sunshine.pairingInProgress
             }
