@@ -12,7 +12,9 @@
 
 ## Video
 
-[Cast or Stream KDE Plasma to a Big Screen: 4 Ways Compared](https://www.youtube.com/watch?v=CU3DDhRTpgw) — see Moonbeam sharing a complete KDE Plasma desktop alongside the other ways to get KDE onto a big screen.
+[![Cast or Stream KDE Plasma to a Big Screen: 4 Ways Compared](https://i.ytimg.com/vi/CU3DDhRTpgw/maxresdefault.jpg)](https://www.youtube.com/watch?v=CU3DDhRTpgw)
+
+See Moonbeam sharing a complete KDE Plasma desktop alongside the other ways to get KDE onto a big screen.
 
 Sharing a laptop screen in a meeting, classroom, or conference room
 shouldn't mean searching for the right cable, the right adapter, or
