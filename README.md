@@ -107,6 +107,26 @@ Grab the package for your distro from the
 - **Debian/Ubuntu (or derivatives):**
   `sudo apt install ./moonbeam_*_amd64.deb`
 
+Alternatively, install signed RPMs and receive updates through the OBS repository:
+
+Choose the repository for your installed distribution. Add it only once; the same repository provides the other Agundur packages too.
+
+**openSUSE Tumbleweed:**
+
+```bash
+sudo zypper ar -f https://download.opensuse.org/repositories/home:/Agundur/openSUSE_Tumbleweed/home:Agundur.repo
+sudo zypper --gpg-auto-import-keys ref
+sudo zypper in moonbeam
+```
+
+**openSUSE Leap 16.0:**
+
+```bash
+sudo zypper ar -f https://download.opensuse.org/repositories/home:/Agundur/16.0/home:Agundur.repo
+sudo zypper --gpg-auto-import-keys ref
+sudo zypper in moonbeam
+```
+
 No Flatpak yet — Moonbeam manages a host-level Sunshine process and talks
 to KWallet, both awkward to reach cleanly from inside a sandbox. Might
 revisit if there's demand.
